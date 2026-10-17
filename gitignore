@@ -1,0 +1,38 @@
+# ===== Python virtual environment =====
+# Big, computer-specific, and easy to rebuild from requirements.txt
+venv/
+.venv/
+env/
+
+# ===== Python cache files =====
+# Created automatically when Python runs your code
+__pycache__/
+*.py[cod]
+
+# ===== Secrets and local settings =====
+# Passwords, secret keys, database URLs. Never commit these.
+.env
+.env.*
+!.env.example
+instance/
+
+# ===== Uploaded files =====
+# Student submissions, reviews and corrections uploaded through the site
+uploads/
+
+# ===== Local databases and logs =====
+*.db
+*.sqlite3
+*.log
+
+# ===== Test and tool caches =====
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ===== Editor and OS files =====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

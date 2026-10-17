@@ -28,6 +28,9 @@
   main {
   flex: 1;
 }
+main section {
+  margin-bottom: 48px;
+}
   h1,h2,h3{
     font-family: var(--font-heading);
     color: var(--maroon);
