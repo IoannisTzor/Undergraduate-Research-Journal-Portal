@@ -1,8 +1,46 @@
-body {
-  font-family: "Archivo", sans-serif;
+/* ===== Colours and fonts ===== */
+:root {
+  /* CMU primary colours */
+  --maroon: #6A0032;
+  --gold: #FFC82E;
+
+  /* CMU secondary colours we'll use */
+  --background: #F3F6F7;
+  --light-blue: #DBE8EE;
+  --text: #07272D;
+  --text-muted: #556B6F;
+
+  /* CMU fonts */
+  --font-heading: "Anton", sans-serif;
+  --font-subhead: "Slabo 27px", serif;
+  --font-body: "Archivo", sans-serif;
+
+  /* === Base Styles === */
+
+  body{
+    font-family: var(--font-body);
+    color: var(--text);
+    background-color: var(--background);
+  }
+
+  h1,h2,h3{
+    font-family: var(--font-heading);
+    color: var(--maroon);
+  }
+
+  a {
+    color: var(--maroon);
+  }
+
+  * {
+  box-sizing: border-box;
+  margin: 0;
 }
 
-h1 {
-  font-family: "Anton", sans-serif;
-  color: #6A0032;
+  /* ===== Layout ===== */
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
 }
