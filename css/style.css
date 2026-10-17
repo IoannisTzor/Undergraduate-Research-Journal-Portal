@@ -18,11 +18,16 @@
   /* === Base Styles === */
 
   body{
-    font-family: var(--font-body);
-    color: var(--text);
-    background-color: var(--background);
+  font-family: var(--font-body);
+  color: var(--text);
+  background-color: var(--background);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   }
-
+  main {
+  flex: 1;
+}
   h1,h2,h3{
     font-family: var(--font-heading);
     color: var(--maroon);
@@ -40,7 +45,109 @@
   /* ===== Layout ===== */
 .container {
   max-width: 1100px;
+  width: 100%;
   margin: 0 auto;
   padding: 24px;
+}
+
+/* ===== Header ===== */
+.site-header {
+  background-color: var(--maroon);
+  border-bottom: 4px solid var(--gold);
+}
+
+.header-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.site-name {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  color: white;
+  text-decoration: none;
+}
+
+.site-header ul {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+  padding: 0;
+}
+
+.site-header ul a {
+  color: white;
+  text-decoration: none;
+}
+
+.site-header ul a:hover {
+  color: var(--gold);
+}
+/* ===== Intro and buttons ===== */
+.intro {
+  font-family: var(--font-subhead);
+  font-size: 1.35rem;
+  color: var(--text-muted);
+  max-width: 40em;
+  margin-bottom: 24px;
+}
+
+.button {
+  display: inline-block;
+  background-color: var(--maroon);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 4px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.button:hover {
+  background-color: var(--gold);
+  color: var(--maroon);
+}
+/* ===== Article list ===== */
+article {
+  background-color: white;
+  border-left: 4px solid var(--maroon);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+
+article h3 {
+  font-size: 1.5rem;
+  margin-bottom: 4px;
+}
+
+article h3 a {
+  text-decoration: none;
+}
+
+article h3 a:hover {
+  text-decoration: underline;
+}
+
+.authors {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+/* ===== Footer ===== */
+.site-footer {
+  background-color: var(--maroon);
+  border-top: 4px solid var(--gold);
+  color: white;
+  margin-top: 48px;
+}
+
+.site-footer p {
+  margin-bottom: 4px;
+}
+
+.footer-name {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
 }
 }

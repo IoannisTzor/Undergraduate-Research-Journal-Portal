@@ -10,8 +10,9 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header class ="container">
-    <a href="#">STEM Student Journal</a>
+  <header class ="site-header">
+    <div class="container header-inner">
+    <a href="#" class ="site-name">STEM Student Journal</a>
     <nav>
       <ul>
         <li><a href="#">Home</a></li>
@@ -20,12 +21,13 @@
         <li><a href="#">About</a></li>
       </ul>
     </nav>
+    </div>
   </header>
   <main class ="container">
     <section>
       <h1>Research by students, for anyone curious.</h1>
-      <p>The STEM Student Journal publishes undergraduate research in science, technology, engineering and math.</p>
-      <a href="#">Submit your research</a>
+      <p class="intro">The STEM Student Journal publishes undergraduate research in science, technology, engineering and math.</p>
+      <a href="#" class ="button">Submit your research</a>
     </section>
   </main>
     <section class ="container">
@@ -33,7 +35,7 @@
 
       <article>
         <h3><a href="#">How soil microbes respond to drought</a></h3>
-        <p>By Jane Doe and John Smith</p>
+        <p class = "authors">By Jane Doe and John Smith</p>
         <p>We compared microbial activity in watered and dry soil over six weeks.</p>
       </article>
 
@@ -43,9 +45,11 @@
         <p>A small study of how memory affects how fast sorting really is.</p>
       </article>
     </section>
-  <footer class ="container">
-    <p>STEM Student Journal</p>
-    <p>Central Michigan University</p>
+  <footer class ="site-footer">
+    <div class="container">
+      <p class="footer-name">STEM Student Journal</p>
+      <p>Central Michigan University</p>
+    </div>
   </footer>
 </body>
 </html>
