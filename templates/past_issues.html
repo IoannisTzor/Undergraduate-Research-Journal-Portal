@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block title %}Past issues | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <h1>Past issues</h1>
+      <p class="intro">Every issue the journal has published, newest first.</p>
+      <p>Issues are numbered by volume and semester. Each volume covers one academic year, with an issue in the fall and one in the spring.</p>
+    </section>
+
+    <section>
+      <h2>All issues</h2>
+
+      <article>
+        <h3><a href="#">Volume 1, Spring 2026</a></h3>
+        <p class="issue-meta">Published April 2026 | 4 studies</p>
+        <p>Biology, Chemistry, Computer Science</p>
+      </article>
+
+      <article>
+        <h3><a href="#">Volume 0, Fall 2025 (pilot issue)</a></h3>
+        <p class="issue-meta">Published December 2025 | 2 studies</p>
+        <p>Mathematics, Physics</p>
+      </article>
+
+      {# Empty state: shown later with {% if %} when there are no past issues yet
+      <p class="empty-state">
+        The first issue is the current one. Past issues will appear here once the next issue is published.
+        <a href="{{ url_for('home') }}">Read the current issue</a>
+      </p>
+      #}
+    </section>
+
+    <section>
+      <h2>How to cite a study</h2>
+      <p>If you use a study from the journal in your own work, cite it like this:</p>
+      <p class="citation">Doe, J., &amp; Smith, J. (2026). How soil microbes respond to drought. <em>STEM Student Journal</em>, 1(2).</p>
+      <p>The numbers at the end are the volume and the issue within that volume.</p>
+    </section>
+
+    <section class="submit-prompt">
+      <h2>Want your work in the next issue?</h2>
+      <p>Lab reports, independent studies, and class projects are all welcome.</p>
+      <a href="{{ url_for('signup') }}" class="button">Become a Submitter</a>
+      <!-- add reference -->
+    </section>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Sign up | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section class="form-page">
+      <h1>Sign up</h1>
+
+      <form method="post">
+        <div class="field">
+          <label for="name">Full name</label>
+          <input type="text" id="name" name="name" autocomplete="name" required>
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" autocomplete="email" required>
+        </div>
+
+        <div class="field">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" autocomplete="new-password" required>
+        </div>
+
+        <div class="field">
+          <label for="confirm_password">Confirm password</label>
+          <input type="password" id="confirm_password" name="confirm_password" autocomplete="new-password" required>
+        </div>
+
+        <button type="submit" class="button">Create account</button>
+      </form>
+
+      <p class="form-switch">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+    </section>
+{% endblock %}

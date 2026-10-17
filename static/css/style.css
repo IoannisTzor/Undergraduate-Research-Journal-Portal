@@ -153,4 +153,70 @@ article h3 a:hover {
   font-family: var(--font-heading);
   font-size: 1.5rem;
 }
+
+/* ===== Past issues ===== */
+.issue-meta {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.citation {
+  background-color: var(--light-blue);
+  border-left: 4px solid var(--maroon);
+  padding: 16px 20px;
+  max-width: 45em;
+}
+
+.empty-state {
+  background-color: white;
+  padding: 24px;
+  color: var(--text-muted);
+}
+
+.submit-prompt {
+  background-color: white;
+  padding: 32px;
+  border-top: 4px solid var(--gold);
+}
+
+/* ===== Forms ===== */
+.form-page {
+  max-width: 420px;
+}
+
+.field {
+  margin-bottom: 20px;
+}
+
+.field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.field input {
+  width: 100%;
+  padding: 10px 12px;
+  font: inherit;
+  border: 1px solid var(--text-muted);
+  border-radius: 4px;
+  background-color: white;
+}
+
+.field input:focus {
+  outline: 3px solid var(--gold);
+  border-color: var(--maroon);
+}
+
+.form-switch {
+  margin-top: 24px;
+}
+
+button.button {
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 600;
+}
 }
