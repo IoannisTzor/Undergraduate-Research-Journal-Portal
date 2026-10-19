@@ -8,6 +8,7 @@ env/
 # Created automatically when Python runs your code
 __pycache__/
 *.py[cod]
+*.pyc
 
 # ===== Secrets and local settings =====
 # Passwords, secret keys, database URLs. Never commit these.
