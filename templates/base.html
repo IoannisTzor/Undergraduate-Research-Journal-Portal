@@ -12,6 +12,14 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <div class="dev-bar">
+    <div class="container">
+      Viewing as: <strong>{{ current_role }}</strong>
+      {% for role in roles %}
+        <a href="{{ url_for('switch_role', role=role) }}">{{ role }}</a>
+      {% endfor %}
+    </div>
+  </div>
   <header class="site-header">
     <div class="container header-inner">
       <a href="{{ url_for('home') }}" class="site-name">STEM Student Journal</a>

@@ -1,6 +1,11 @@
 from flask import Flask, render_template
 
+from flask import Flask, render_template, session, redirect, url_for, request
+
 app = Flask(__name__)
+app.secret_key = "dev-only-change-later"
+
+ROLES = ["guest", "submitter", "reviewer", "editor", "admin"]
 
 
 @app.route("/")
@@ -22,3 +27,17 @@ def login():
 @app.route("/signup")
 def signup():
     return render_template("signup.html")
+
+@app.route("/dev/role/<role>")
+def switch_role(role):
+    if role in ROLES:
+        session["role"] = role
+    return redirect(request.referrer or url_for("home"))
+
+
+@app.context_processor
+def inject_role():
+    return {
+        "current_role": session.get("role", "guest"),
+        "roles": ROLES,
+    }
