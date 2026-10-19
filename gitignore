@@ -6,7 +6,7 @@ env/
 
 # ===== Python cache files =====
 # Created automatically when Python runs your code
-__pycache__/
+**__pycache__/
 *.py[cod]
 *.pyc
 
