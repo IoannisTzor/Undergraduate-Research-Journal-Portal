@@ -41,3 +41,7 @@ def inject_role():
         "current_role": session.get("role", "guest"),
         "roles": ROLES,
     }
+
+@app.route("/submit")
+def submit_study():
+    return render_template("submit_study.html")

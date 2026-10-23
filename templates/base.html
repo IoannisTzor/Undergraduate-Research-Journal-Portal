@@ -26,9 +26,26 @@
       <nav>
         <ul>
           <li><a href="{{ url_for('home') }}">Home</a></li>
-          <li><a href="{{ url_for('past_issues') }}"> Past Articles</a></li>
+          <li><a href="{{ url_for('past_issues') }}">Past issues</a></li>
           <li><a href="{{ url_for('about') }}">About</a></li>
-          <li><a href="{{ url_for('login') }}">Log in</a></li>
+
+          {% if current_role == "submitter" %}
+            <li><a href="#">My submissions</a></li>
+            <li><a href="{{ url_for('submit_study') }}">Submit a study</a></li>
+          {% elif current_role == "reviewer" %}
+            <li><a href="#">My assignments</a></li>
+          {% elif current_role == "editor" %}
+            <li><a href="#">All submissions</a></li>
+            <li><a href="#">Build an issue</a></li>
+          {% elif current_role == "admin" %}
+            <li><a href="#">Manage users</a></li>
+          {% endif %}
+
+          {% if current_role == "guest" %}
+            <li><a href="{{ url_for('login') }}">Log in</a></li>
+          {% else %}
+            <li><a href="{{ url_for('switch_role', role='guest') }}">Log out</a></li>
+          {% endif %}
         </ul>
       </nav>
     </div>

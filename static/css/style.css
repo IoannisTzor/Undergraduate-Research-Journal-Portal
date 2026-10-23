@@ -63,7 +63,10 @@ main section {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
 }
+
 
 .site-name {
   font-family: var(--font-heading);
@@ -72,8 +75,10 @@ main section {
   text-decoration: none;
 }
 
+
 .site-header ul {
   display: flex;
+  flex-wrap: wrap;
   gap: 24px;
   list-style: none;
   padding: 0;
@@ -195,7 +200,9 @@ article h3 a:hover {
   margin-bottom: 6px;
 }
 
-.field input {
+.field input,
+.field select,
+.field textarea {
   width: 100%;
   padding: 10px 12px;
   font: inherit;
@@ -204,7 +211,9 @@ article h3 a:hover {
   background-color: white;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
   outline: 3px solid var(--gold);
   border-color: var(--maroon);
 }
@@ -212,7 +221,35 @@ article h3 a:hover {
 .form-switch {
   margin-top: 24px;
 }
+.form-page--wide {
+  max-width: 640px;
+}
 
+.field textarea {
+  resize: vertical;
+}
+
+.field-hint {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-top: 6px;
+  margin-bottom: 0;
+}
+
+.field--checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.field--checkbox input {
+  width: auto;
+  margin-top: 4px;
+}
+
+.field--checkbox label {
+  font-weight: 400;
+}
 button.button {
   border: none;
   cursor: pointer;

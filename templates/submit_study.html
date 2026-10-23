@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block title %}Submit a study | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section class="form-page form-page--wide">
+      <h1>Submit a study</h1>
+      <p class="intro">Your study will be assigned to reviewers, and you'll be able to follow its progress from My submissions.</p>
+
+      <form method="post" enctype="multipart/form-data">
+        <div class="field">
+          <label for="title">Study title</label>
+          <input type="text" id="title" name="title" required>
+        </div>
+
+        <div class="field">
+          <label for="discipline">Discipline</label>
+          <select id="discipline" name="discipline" required>
+            <option value="">Choose a discipline</option>
+            <option value="biology">Biology</option>
+            <option value="chemistry">Chemistry</option>
+            <option value="computer-science">Computer Science</option>
+            <option value="engineering">Engineering</option>
+            <option value="environmental-science">Environmental Science</option>
+            <option value="mathematics">Mathematics</option>
+            <option value="physics">Physics</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label for="coauthors">Co-authors</label>
+          <input type="text" id="coauthors" name="coauthors" aria-describedby="coauthors-hint">
+          <p class="field-hint" id="coauthors-hint">Optional. Separate names with commas.</p>
+        </div>
+
+        <div class="field">
+          <label for="mentor">Faculty mentor</label>
+          <input type="text" id="mentor" name="mentor" required>
+        </div>
+
+        <div class="field">
+          <label for="abstract">Abstract</label>
+          <textarea id="abstract" name="abstract" rows="7" required aria-describedby="abstract-hint"></textarea>
+          <p class="field-hint" id="abstract-hint">250 words or fewer.</p>
+        </div>
+
+        <div class="field">
+          <label for="study_file">Study file (PDF)</label>
+          <input type="file" id="study_file" name="study_file" accept=".pdf,application/pdf" required>
+        </div>
+
+        <div class="field field--checkbox">
+          <input type="checkbox" id="confirm" name="confirm" required>
+          <label for="confirm">This is my original work, and my faculty mentor has approved this submission.</label>
+        </div>
+
+        <button type="submit" class="button">Submit study</button>
+      </form>
+    </section>
+{% endblock %}
