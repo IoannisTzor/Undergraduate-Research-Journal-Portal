@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}No access | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <h1>You don't have access to this page</h1>
+      {% if current_role == "guest" %}
+        <p class="intro">You need to log in to see this page.</p>
+        <a href="{{ url_for('login') }}" class="button">Log in</a>
+      {% else %}
+        <p class="intro">Your account doesn't have permission to view this page.</p>
+        <a href="{{ url_for('home') }}" class="button">Go to the homepage</a>
+      {% endif %}
+    </section>
+{% endblock %}

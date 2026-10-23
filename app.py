@@ -1,6 +1,6 @@
 from flask import Flask, render_template
 
-from flask import Flask, render_template, session, redirect, url_for, request
+from flask import Flask, render_template, session, redirect, url_for, request, abort
 
 app = Flask(__name__)
 app.secret_key = "dev-only-change-later"
@@ -44,4 +44,10 @@ def inject_role():
 
 @app.route("/submit")
 def submit_study():
+    if session.get("role") != "submitter":
+        abort(403)
     return render_template("submit_study.html")
+
+@app.errorhandler(403)
+def forbidden(error):
+    return render_template("403.html"), 403
