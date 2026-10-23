@@ -2,11 +2,22 @@ from flask import Flask, render_template
 
 from flask import Flask, render_template, session, redirect, url_for, request, abort
 
+from functools import wraps
+
 app = Flask(__name__)
 app.secret_key = "dev-only-change-later"
 
 ROLES = ["guest", "submitter", "reviewer", "editor", "admin"]
 
+def role_required(role):
+    def decorator(view):
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            if session.get("role") != role:
+                abort(403)
+            return view(*args, **kwargs)
+        return wrapped
+    return decorator
 
 @app.route("/")
 def home():
@@ -43,9 +54,8 @@ def inject_role():
     }
 
 @app.route("/submit")
+@role_required("submitter")
 def submit_study():
-    if session.get("role") != "submitter":
-        abort(403)
     return render_template("submit_study.html")
 
 @app.errorhandler(403)
