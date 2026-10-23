@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}{{ submission.title }} | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <p><a href="{{ url_for('my_submissions') }}">Back to My submissions</a></p>
+      <h1>{{ submission.title }}</h1>
+
+      <dl class="details-list">
+        <dt>Status</dt>
+        <dd>
+          <span class="status status--{{ submission.status }}">
+            {{ submission.status | replace("-", " ") | capitalize }}
+          </span>
+        </dd>
+        <dt>Discipline</dt>
+        <dd>{{ submission.discipline }}</dd>
+        <dt>Submitted</dt>
+        <dd>{{ submission.submitted }}</dd>
+      </dl>
+    </section>
+
+    <section>
+      <h2>Reviews</h2>
+      {% if submission.reviews %}
+        {% for review in submission.reviews %}
+          <article>
+            <h3>{{ review.reviewer }}</h3>
+            <p class="issue-meta">{{ review.date }} | Recommendation: {{ review.recommendation }}</p>
+            <p>{{ review.comments }}</p>
+          </article>
+        {% endfor %}
+      {% else %}
+        <p class="empty-state">No reviews yet. You'll see them here once your reviewers are done.</p>
+      {% endif %}
+    </section>
+
+    {% if submission.status == "revisions-requested" %}
+      <section class="form-page form-page--wide">
+        <h2>Upload corrections</h2>
+        <p>Upload your revised study and briefly explain what you changed in response to the reviews.</p>
+
+        <form method="post" enctype="multipart/form-data">
+          <div class="field">
+            <label for="revised_file">Revised study (PDF)</label>
+            <input type="file" id="revised_file" name="revised_file" accept=".pdf,application/pdf" required>
+          </div>
+
+          <div class="field">
+            <label for="response">What did you change?</label>
+            <textarea id="response" name="response" rows="6" required></textarea>
+          </div>
+
+          <button type="submit" class="button">Upload corrections</button>
+        </form>
+      </section>
+    {% endif %}
+{% endblock %}

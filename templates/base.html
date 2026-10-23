@@ -30,10 +30,10 @@
           <li><a href="{{ url_for('about') }}">About</a></li>
 
           {% if current_role == "submitter" %}
-            <li><a href="#">My submissions</a></li>
+            <li><a href="{{ url_for('my_submissions') }}">My submissions</a></li>
             <li><a href="{{ url_for('submit_study') }}">Submit a study</a></li>
           {% elif current_role == "reviewer" %}
-            <li><a href="#">My assignments</a></li>
+            <li><a href="{{url_for('my_assignments')}}">My assignments</a></li>
           {% elif current_role == "editor" %}
             <li><a href="#">All submissions</a></li>
             <li><a href="#">Build an issue</a></li>

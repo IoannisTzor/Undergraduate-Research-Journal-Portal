@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Review: {{ assignment.title }} | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <p><a href="{{ url_for('my_assignments') }}">Back to My assignments</a></p>
+      <h1>{{ assignment.title }}</h1>
+
+      <dl class="details-list">
+        <dt>Discipline</dt>
+        <dd>{{ assignment.discipline }}</dd>
+        <dt>Assigned</dt>
+        <dd>{{ assignment.assigned }}</dd>
+        <dt>Review due</dt>
+        <dd>{{ assignment.due }}</dd>
+      </dl>
+
+      <p class="study-download"><a href="#" class="button">Download the study (PDF)</a></p>
+    </section>
+
+    {% if assignment.review_status == "submitted" %}
+      <section>
+        <h2>Your review</h2>
+        <p class="empty-state">You've already submitted your review for this study. Thank you!</p>
+      </section>
+    {% else %}
+      <section class="form-page form-page--wide">
+        <h2>Write your review</h2>
+
+        <form method="post" enctype="multipart/form-data">
+          <fieldset class="field">
+            <legend>Recommendation</legend>
+            <div class="radio-option">
+              <input type="radio" id="rec-accept" name="recommendation" value="accept" required>
+              <label for="rec-accept">Accept</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="rec-minor" name="recommendation" value="minor-revisions">
+              <label for="rec-minor">Minor revisions</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="rec-major" name="recommendation" value="major-revisions">
+              <label for="rec-major">Major revisions</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="rec-reject" name="recommendation" value="reject">
+              <label for="rec-reject">Reject</label>
+            </div>
+          </fieldset>
+
+          <div class="field">
+            <label for="author_comments">Comments for the author</label>
+            <textarea id="author_comments" name="author_comments" rows="8" required aria-describedby="author-comments-hint"></textarea>
+            <p class="field-hint" id="author-comments-hint">The student will see these comments. Be specific and constructive.</p>
+          </div>
+
+          <div class="field">
+            <label for="editor_comments">Confidential comments for the editor</label>
+            <textarea id="editor_comments" name="editor_comments" rows="4" aria-describedby="editor-comments-hint"></textarea>
+            <p class="field-hint" id="editor-comments-hint">Optional. Only the editor will see these.</p>
+          </div>
+
+          <div class="field">
+            <label for="annotated_file">Annotated study (PDF)</label>
+            <input type="file" id="annotated_file" name="annotated_file" accept=".pdf,application/pdf" aria-describedby="annotated-hint">
+            <p class="field-hint" id="annotated-hint">Optional. Upload the study with your notes on it.</p>
+          </div>
+
+          <button type="submit" class="button">Submit review</button>
+        </form>
+      </section>
+    {% endif %}
+{% endblock %}

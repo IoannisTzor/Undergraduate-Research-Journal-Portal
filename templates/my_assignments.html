@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}My assignments | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <h1>My assignments</h1>
+      <p class="intro">Studies assigned to you for review. Open a study to read it and write your review.</p>
+    </section>
+
+    <section>
+      {% if assignments %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Study</th>
+                <th scope="col">Discipline</th>
+                <th scope="col">Due</th>
+                <th scope="col">Review</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for assignment in assignments %}
+                <tr>
+                  <td><a href="{{ url_for('write_review', assignment_id=assignment.id) }}">{{ assignment.title }}</a></td>
+                  <td>{{ assignment.discipline }}</td>
+                  <td>{{ assignment.due }}</td>
+                  <td>
+                    <span class="status status--{{ assignment.review_status }}">
+                      {{ assignment.review_status | replace("-", " ") | capitalize }}
+                    </span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-state">No studies are assigned to you right now.</p>
+      {% endif %}
+    </section>
+{% endblock %}
