@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Page not found | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <h1>That page doesn't exist</h1>
+      <p class="intro">The link may be old, or the address may have a typo.</p>
+      <a href="{{ url_for('home') }}" class="button">Go to the homepage</a>
+    </section>
+{% endblock %}
