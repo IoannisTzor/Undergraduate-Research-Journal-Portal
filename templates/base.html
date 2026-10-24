@@ -38,7 +38,7 @@
             <li><a href="{{url_for('all_submissions')}}">All submissions</a></li>
             <li><a href="{{url_for('build_issue')}}">Build an issue</a></li>
           {% elif current_role == "admin" %}
-            <li><a href="#">Manage users</a></li>
+            <li><a href="{{url_for('manage_users')}}">Manage users</a></li>
           {% endif %}
 
           {% if current_role == "guest" %}

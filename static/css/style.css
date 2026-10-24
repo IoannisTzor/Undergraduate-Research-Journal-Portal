@@ -81,6 +81,15 @@ a {
   color: var(--maroon);
 }
 
+/* Hidden on screen, still read by screen readers */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
 
 /* ===== 4. Layout ===== */
 .container {
@@ -188,6 +197,10 @@ button.button {
   color: var(--maroon);
 }
 
+.button--small {
+  padding: 6px 12px;
+  font-size: 0.9rem;
+}
 
 /* ===== 8. Page text ===== */
 .intro {
@@ -361,6 +374,20 @@ fieldset.field legend {
   gap: 12px;
 }
 
+/* Small form inside a table row */
+.row-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.row-form select {
+  padding: 6px 8px;
+  font: inherit;
+  border: 1px solid var(--text-muted);
+  border-radius: 4px;
+  background-color: white;
+}
 
 /* ===== 12. Tables ===== */
 .table-wrap {
