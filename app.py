@@ -79,6 +79,29 @@ SAMPLE_SUBMISSIONS = [
         "author": "Omar Haddad",
         "reviewers": [],
     },
+        {
+        "id": 5,
+        "title": "Graph coloring for exam scheduling",
+        "discipline": "Mathematics",
+        "submitted": "August 28, 2026",
+        "status": "accepted",
+        "author": "Lena Fischer",
+        "reviewers": [
+            {"name": "Dr. Ana Ruiz", "review_status": "submitted"},
+        ],
+    },
+    {
+        "id": 6,
+        "title": "Antibacterial properties of local honey",
+        "discipline": "Chemistry",
+        "submitted": "September 4, 2026",
+        "status": "accepted",
+        "author": "Marcus Bell",
+        "reviewers": [
+            {"name": "Sam Carter", "review_status": "submitted"},
+            {"name": "Dr. Maria Lopez", "review_status": "submitted"},
+        ],
+    },
 ]
 SAMPLE_ASSIGNMENTS = [
     {
@@ -102,6 +125,14 @@ SAMPLE_ASSIGNMENTS = [
     },
 ]
 SAMPLE_REVIEWERS = ["Dr. Maria Lopez", "Dr. Ken Wu", "Sam Carter", "Dr. Ana Ruiz"]
+
+SAMPLE_USERS = [
+    {"id": 1, "name": "Jane Doe", "email": "doe1j@cmich.edu", "role": "submitter", "joined": "August 30, 2026"},
+    {"id": 2, "name": "Dr. Maria Lopez", "email": "lopez1m@cmich.edu", "role": "reviewer", "joined": "August 12, 2026"},
+    {"id": 3, "name": "Sam Carter", "email": "carte1s@cmich.edu", "role": "reviewer", "joined": "September 2, 2026"},
+    {"id": 4, "name": "Kathryn Bleicher", "email": "bleic1k@cmich.edu", "role": "editor", "joined": "August 1, 2026"},
+    {"id": 5, "name": "Site Admin", "email": "admin@cmich.edu", "role": "admin", "joined": "August 1, 2026"},
+]
 
 @app.route("/")
 def home():
@@ -188,7 +219,18 @@ def manage_submission(submission_id):
                 reviewer_options=SAMPLE_REVIEWERS,
             )
     abort(404)
-    
+
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template("404.html"), 404
+
+@app.route("/editor/build-issue")
+@role_required("editor")
+def build_issue():
+    accepted = [s for s in SAMPLE_SUBMISSIONS if s["status"] == "accepted"]
+    return render_template("build_issue.html", accepted=accepted)
+
+@app.route("/admin/users")
+@role_required("admin")
+def manage_users():
+    return render_template("manage_users.html", users=SAMPLE_USERS)

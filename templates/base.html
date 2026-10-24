@@ -36,7 +36,7 @@
             <li><a href="{{url_for('my_assignments')}}">My assignments</a></li>
           {% elif current_role == "editor" %}
             <li><a href="{{url_for('all_submissions')}}">All submissions</a></li>
-            <li><a href="#">Build an issue</a></li>
+            <li><a href="{{url_for('build_issue')}}">Build an issue</a></li>
           {% elif current_role == "admin" %}
             <li><a href="#">Manage users</a></li>
           {% endif %}
