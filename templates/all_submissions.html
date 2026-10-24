@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}All submissions | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <h1>All submissions</h1>
+      <p class="intro">Every submission to the journal. Open a study to assign reviewers or make a decision.</p>
+    </section>
+
+    <section>
+      {% if submissions %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Study</th>
+                <th scope="col">Author</th>
+                <th scope="col">Submitted</th>
+                <th scope="col">Reviewers</th>
+                <th scope="col">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for submission in submissions %}
+                <tr>
+                  <td><a href="{{ url_for('manage_submission', submission_id=submission.id) }}">{{ submission.title }}</a></td>
+                  <td>{{ submission.author }}</td>
+                  <td>{{ submission.submitted }}</td>
+                  <td>
+                    {% if submission.reviewers %}
+                      {{ submission.reviewers | length }} assigned
+                    {% else %}
+                      <strong>None assigned</strong>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <span class="status status--{{ submission.status }}">
+                      {{ submission.status | replace("-", " ") | capitalize }}
+                    </span>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-state">No studies have been submitted yet.</p>
+      {% endif %}
+    </section>
+{% endblock %}

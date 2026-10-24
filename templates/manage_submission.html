@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Manage: {{ submission.title }} | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <p><a href="{{ url_for('all_submissions') }}">Back to All submissions</a></p>
+      <h1>{{ submission.title }}</h1>
+
+      <dl class="details-list">
+        <dt>Author</dt>
+        <dd>{{ submission.author }}</dd>
+        <dt>Discipline</dt>
+        <dd>{{ submission.discipline }}</dd>
+        <dt>Submitted</dt>
+        <dd>{{ submission.submitted }}</dd>
+        <dt>Status</dt>
+        <dd>
+          <span class="status status--{{ submission.status }}">
+            {{ submission.status | replace("-", " ") | capitalize }}
+          </span>
+        </dd>
+      </dl>
+
+      <p class="study-download"><a href="#" class="button">Download the study (PDF)</a></p>
+    </section>
+
+    <section>
+      <h2>Reviewers</h2>
+      {% if submission.reviewers %}
+        <ul class="reviewer-list">
+          {% for reviewer in submission.reviewers %}
+            <li>
+              <span>{{ reviewer.name }}</span>
+              <span class="status status--{{ reviewer.review_status }}">
+                {{ reviewer.review_status | replace("-", " ") | capitalize }}
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-state">No reviewers assigned yet.</p>
+      {% endif %}
+
+      {% if submission.status not in ["accepted", "rejected", "published"] %}
+        <form method="post" class="form-page form-page--wide assign-form">
+          <h3>Assign a reviewer</h3>
+          <div class="field">
+            <label for="reviewer">Reviewer</label>
+            <select id="reviewer" name="reviewer" required>
+              <option value="">Choose a reviewer</option>
+              {% for name in reviewer_options %}
+                <option value="{{ name }}">{{ name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="due_date">Review due</label>
+            <input type="date" id="due_date" name="due_date" required>
+          </div>
+          <button type="submit" name="action" value="assign" class="button">Assign reviewer</button>
+        </form>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Reviews</h2>
+      {% if submission.reviews %}
+        {% for review in submission.reviews %}
+          <article>
+            <h3>{{ review.reviewer }}</h3>
+            <p class="issue-meta">{{ review.date }} | Recommendation: {{ review.recommendation }}</p>
+            <p>{{ review.comments }}</p>
+            {% if review.editor_comments %}
+              <div class="confidential">
+                <p class="confidential-label">Confidential, for the editor only</p>
+                <p>{{ review.editor_comments }}</p>
+              </div>
+            {% endif %}
+          </article>
+        {% endfor %}
+      {% else %}
+        <p class="empty-state">No reviews have been submitted yet.</p>
+      {% endif %}
+    </section>
+
+    {% if submission.status not in ["accepted", "rejected", "published"] %}
+      <section class="form-page form-page--wide">
+        <h2>Decision</h2>
+        <form method="post">
+          <fieldset class="field">
+            <legend>Your decision</legend>
+            <div class="radio-option">
+              <input type="radio" id="dec-accept" name="decision" value="accepted" required>
+              <label for="dec-accept">Accept</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="dec-revise" name="decision" value="revisions-requested">
+              <label for="dec-revise">Request revisions</label>
+            </div>
+            <div class="radio-option">
+              <input type="radio" id="dec-reject" name="decision" value="rejected">
+              <label for="dec-reject">Reject</label>
+            </div>
+          </fieldset>
+
+          <div class="field">
+            <label for="decision_note">Message to the author</label>
+            <textarea id="decision_note" name="decision_note" rows="5" required aria-describedby="decision-note-hint"></textarea>
+            <p class="field-hint" id="decision-note-hint">The author will see this together with the reviewers' comments.</p>
+          </div>
+
+          <button type="submit" name="action" value="decide" class="button">Send decision</button>
+        </form>
+      </section>
+    {% endif %}
+{% endblock %}

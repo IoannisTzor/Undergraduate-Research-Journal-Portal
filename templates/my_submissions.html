@@ -24,7 +24,7 @@
             <tbody>
               {% for submission in submissions %}
                 <tr>
-                  <td><a href="{{ url_for('write_review', assignment_id=assignment.id) }}">{{ submission.title }}</a></td>
+                  <td><a href="{{ url_for('submission_details', submission_id=submission.id) }}">{{ submission.title }}</a></td>
                   <td>{{ submission.discipline }}</td>
                   <td>{{ submission.submitted }}</td>
                   <td>

@@ -372,3 +372,43 @@ fieldset.field legend {
 .study-download {
   margin-top: 24px;
 }
+/* ===== Manage submission ===== */
+.reviewer-list {
+  list-style: none;
+  padding: 0;
+  background-color: white;
+}
+
+.reviewer-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--light-blue);
+}
+
+.assign-form {
+  margin-top: 24px;
+}
+
+.assign-form h3 {
+  margin-bottom: 12px;
+}
+
+.confidential {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background-color: var(--light-blue);
+  border: 1px dashed var(--maroon);
+}
+
+.confidential-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--maroon);
+}
+
+.confidential p:last-child {
+  margin-bottom: 0;
+}

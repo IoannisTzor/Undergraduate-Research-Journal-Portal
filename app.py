@@ -26,12 +26,18 @@ SAMPLE_SUBMISSIONS = [
         "discipline": "Biology",
         "submitted": "September 12, 2026",
         "status": "revisions-requested",
+        "author": "Jane Doe",
+        "reviewers": [
+            {"name": "Dr. Maria Lopez", "review_status": "submitted"},
+            {"name": "Sam Carter", "review_status": "submitted"},
+        ],
         "reviews": [
             {
                 "reviewer": "Reviewer 1",
                 "date": "October 3, 2026",
                 "recommendation": "Minor revisions",
                 "comments": "Clear question and good sampling design. Please explain how soil moisture was measured, and add error bars to Figure 2.",
+                "editor_comments": "Figure 2 looks very similar to one in a 2021 paper. Worth checking with the author.",
             },
             {
                 "reviewer": "Reviewer 2",
@@ -47,6 +53,10 @@ SAMPLE_SUBMISSIONS = [
         "discipline": "Computer Science",
         "submitted": "September 30, 2026",
         "status": "under-review",
+        "author": "Alex Lee",
+        "reviewers": [
+            {"name": "Dr. Ken Wu", "review_status": "not-started"},
+        ],
     },
     {
         "id": 3,
@@ -54,6 +64,20 @@ SAMPLE_SUBMISSIONS = [
         "discipline": "Environmental Science",
         "submitted": "April 2, 2026",
         "status": "published",
+        "author": "Priya Shah",
+        "reviewers": [
+            {"name": "Dr. Maria Lopez", "review_status": "submitted"},
+            {"name": "Dr. Ken Wu", "review_status": "submitted"},
+        ],
+    },
+        {
+        "id": 4,
+        "title": "Solar panel efficiency in Michigan winters",
+        "discipline": "Engineering",
+        "submitted": "October 18, 2026",
+        "status": "submitted",
+        "author": "Omar Haddad",
+        "reviewers": [],
     },
 ]
 SAMPLE_ASSIGNMENTS = [
@@ -65,6 +89,7 @@ SAMPLE_ASSIGNMENTS = [
         "assigned": "September 20, 2026",
         "due": "October 10, 2026",
         "review_status": "submitted",
+
     },
     {
         "id": 2,
@@ -76,6 +101,7 @@ SAMPLE_ASSIGNMENTS = [
         "review_status": "not-started",
     },
 ]
+SAMPLE_REVIEWERS = ["Dr. Maria Lopez", "Dr. Ken Wu", "Sam Carter", "Dr. Ana Ruiz"]
 
 @app.route("/")
 def home():
@@ -146,3 +172,19 @@ def write_review(assignment_id):
             return render_template("write_review.html", assignment=assignment)
     abort(404)
 
+@app.route("/editor/submissions")
+@role_required("editor")
+def all_submissions():
+    return render_template("all_submissions.html", submissions=SAMPLE_SUBMISSIONS)
+
+@app.route("/editor/submissions/<int:submission_id>")
+@role_required("editor")
+def manage_submission(submission_id):
+    for submission in SAMPLE_SUBMISSIONS:
+        if submission["id"] == submission_id:
+            return render_template(
+                "manage_submission.html",
+                submission=submission,
+                reviewer_options=SAMPLE_REVIEWERS,
+            )
+    abort(404)
