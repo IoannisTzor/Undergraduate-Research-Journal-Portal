@@ -2,14 +2,12 @@ import os
 from functools import wraps
 
 from flask import Flask, render_template, session, redirect, url_for, request, abort, g
-from models import db, User
 from dotenv import load_dotenv
-from flask import Flask, render_template, session, redirect, url_for, request, abort
 from flask_migrate import Migrate
 from sqlalchemy import text
 from submission_types import SUBMISSION_TYPES
 from seed import seed_command
-from models import db, User, Submission
+from models import db, User, Submission, Review
 
 from models import db
 
@@ -124,27 +122,6 @@ SAMPLE_SUBMISSIONS = [
         ],
     },
 ]
-SAMPLE_ASSIGNMENTS = [
-    {
-        "id": 1,
-        "submission_id": 1,
-        "title": "How soil microbes respond to drought",
-        "discipline": "Biology",
-        "assigned": "September 20, 2026",
-        "due": "October 10, 2026",
-        "review_status": "submitted",
-
-    },
-    {
-        "id": 2,
-        "submission_id": 2,
-        "title": "Measuring cache effects in sorting algorithms",
-        "discipline": "Computer Science",
-        "assigned": "October 5, 2026",
-        "due": "October 26, 2026",
-        "review_status": "not-started",
-    },
-]
 SAMPLE_REVIEWERS = ["Dr. Maria Lopez", "Dr. Ken Wu", "Sam Carter", "Dr. Ana Ruiz"]
 
 SAMPLE_USERS = [
@@ -241,14 +218,20 @@ def forbidden(error):
 @app.route("/assignments")
 @role_required("reviewer")
 def my_assignments():
-    return render_template("my_assignments.html", assignments=SAMPLE_ASSIGNMENTS)
+    reviews = db.session.scalars(
+        db.select(Review)
+        .where(Review.reviewer_id == g.user.id)
+        .order_by(Review.due_date)
+    ).all()
+    return render_template("my_assignments.html", reviews=reviews)
 
-@app.route("/assignments/<int:assignment_id>")
+@app.route("/assignments/<int:review_id>")
 @role_required("reviewer")
-def write_review(assignment_id):
-    for assignment in SAMPLE_ASSIGNMENTS:
-        if assignment["id"] == assignment_id:
-            return render_template("write_review.html", assignment=assignment)
+def write_review(review_id):
+    review = db.session.get(Review, review_id)
+    if review is None or review.reviewer_id != g.user.id:
+        abort(404)
+    return render_template("write_review.html", review=review)
     abort(404)
 
 @app.route("/editor/submissions")

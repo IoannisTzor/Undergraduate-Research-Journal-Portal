@@ -9,26 +9,28 @@
     </section>
 
     <section>
-      {% if assignments %}
+      {% if reviews %}
         <div class="table-wrap">
           <table>
-            <thead>
+           <thead>
               <tr>
                 <th scope="col">Study</th>
+                <th scope="col">Type</th>
                 <th scope="col">Discipline</th>
                 <th scope="col">Due</th>
                 <th scope="col">Review</th>
               </tr>
             </thead>
             <tbody>
-              {% for assignment in assignments %}
+              {% for review in reviews %}
                 <tr>
-                  <td><a href="{{ url_for('write_review', assignment_id=assignment.id) }}">{{ assignment.title }}</a></td>
-                  <td>{{ assignment.discipline }}</td>
-                  <td>{{ assignment.due }}</td>
+                  <td><a href="{{ url_for('write_review', review_id=review.id) }}">{{ review.submission.title }}</a></td>
+                  <td>{{ submission_types[review.submission.submission_type].label }}</td>
+                  <td>{{ review.submission.discipline | replace("-", " ") | title }}</td>
+                  <td>{{ review.due_date | date }}</td>
                   <td>
-                    <span class="status status--{{ assignment.review_status }}">
-                      {{ assignment.review_status | replace("-", " ") | capitalize }}
+                    <span class="status status--{{ review.status }}">
+                      {{ review.status | replace("-", " ") | capitalize }}
                     </span>
                   </td>
                 </tr>

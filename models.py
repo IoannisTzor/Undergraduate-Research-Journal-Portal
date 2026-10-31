@@ -91,6 +91,7 @@ class Review(db.Model):
     reviewer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     assigned_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     due_date = db.Column(db.Date, nullable=False)
+    assigned_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
     status = db.Column(db.String(20), nullable=False, default="not-started")
     recommendation = db.Column(db.String(30))
     author_comments = db.Column(db.Text)
