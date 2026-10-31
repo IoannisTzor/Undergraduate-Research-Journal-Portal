@@ -53,9 +53,14 @@ def home():
 def about():
     return render_template("about.html")
 
-@app.route("/past_issues")
+@app.route("/past-issues")
 def past_issues():
-    return render_template("past_issues.html")
+    published = db.session.scalars(
+        db.select(Issue)
+        .where(Issue.status == "published")
+        .order_by(Issue.published_at.desc())
+    ).all()
+    return render_template("past_issues.html", issues=published[1:])
 
 @app.route("/login")
 def login():

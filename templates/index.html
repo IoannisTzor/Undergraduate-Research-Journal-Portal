@@ -8,19 +8,27 @@
     </section>
 
     <section>
-      <h2>Current issue</h2>
-      <p class="authors">Volume 1, Fall 2026</p>
+      {% if current_issue %}
+        <h2>Current issue</h2>
+        <p class="issue-label">{{ current_issue.label }}</p>
+        {% if current_issue.editor_note %}
+          <p class="intro">{{ current_issue.editor_note }}</p>
+        {% endif %}
 
-      <article>
-        <h3><a href="#">How soil microbes respond to drought</a></h3>
-        <p class="authors">By Jane Doe and John Smith</p>
-        <p>We compared microbial activity in watered and dry soil over six weeks.</p>
-      </article>
-
-      <article>
-        <h3><a href="#">Measuring cache effects in sorting algorithms</a></h3>
-        <p class="authors">By Alex Lee</p>
-        <p>A small study of how memory affects how fast sorting really is.</p>
-      </article>
+        {% for study in current_issue.submissions %}
+          <article>
+            <h3><a href="#">{{ study.title }}</a></h3>
+            <p class="authors">
+              By {{ study.author.first_name }} {{ study.author.last_name }}{% if study.coauthors %}, {{ study.coauthors }}{% endif %}
+              | {{ submission_types[study.submission_type].label }}
+            </p>
+            {% if study.abstract %}
+              <p>{{ study.abstract }}</p>
+            {% endif %}
+          </article>
+        {% endfor %}
+      {% else %}
+        <p class="empty-state">The first issue is on its way. Check back soon!</p>
+      {% endif %}
     </section>
 {% endblock %}
