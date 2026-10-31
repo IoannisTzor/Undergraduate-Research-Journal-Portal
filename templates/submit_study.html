@@ -1,15 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Submit a study | STEM Student Journal{% endblock %}
+{% block title %}Submit a {{ type_info.label | lower }} | STEM Student Journal{% endblock %}
 
 {% block content %}
     <section class="form-page form-page--wide">
-      <h1>Submit a study</h1>
-      <p class="intro">Your study will be assigned to reviewers, and you'll be able to follow its progress from My submissions.</p>
+      <p><a href="{{ url_for('guidelines') }}">Back to submission guidelines</a></p>
+      <h1>Submit a {{ type_info.label | lower }}</h1>
 
-      <form method="post" enctype="multipart/form-data">
+      <div class="citation">
+        <p><strong>Format:</strong> {{ type_info.format_note }}</p>
+        <p><strong>Required elements:</strong> {{ type_info.required_elements | join(", ") | capitalize }}</p>
+        {% if type_info.max_pages %}
+          <p><strong>Max length:</strong> {{ type_info.max_pages }} pages, excluding references</p>
+        {% endif %}
+      </div>
+
+      <form method="post" enctype="multipart/form-data" class="submit-form">
         <div class="field">
-          <label for="title">Study title</label>
+          <label for="title">Title</label>
           <input type="text" id="title" name="title" required>
         </div>
 
@@ -39,22 +47,31 @@
         </div>
 
         <div class="field">
-          <label for="abstract">Abstract</label>
-          <textarea id="abstract" name="abstract" rows="7" required aria-describedby="abstract-hint"></textarea>
-          <p class="field-hint" id="abstract-hint">250 words or fewer.</p>
+          <label for="abstract">{{ type_info.abstract_label }}</label>
+          <textarea id="abstract" name="abstract" rows="7" aria-describedby="abstract-hint" {% if type_info.abstract_required %}required{% endif %}></textarea>
+          <p class="field-hint" id="abstract-hint">
+            {% if type_info.abstract_required %}250 words or fewer.{% else %}Optional. A sentence or two describing your work.{% endif %}
+          </p>
         </div>
 
         <div class="field">
-          <label for="study_file">Study file (PDF)</label>
-          <input type="file" id="study_file" name="study_file" accept=".pdf,application/pdf" required>
+          <label for="study_files">{% if type_info.multiple_files %}Files{% else %}File{% endif %} ({{ type_info.file_formats | join(" or ") | upper }})</label>
+          <input type="file" id="study_files" name="study_files"
+                 accept=".{{ type_info.file_formats | join(',.') }}"
+                 {% if type_info.multiple_files %}multiple{% endif %}
+                 required
+                 {% if type_info.multiple_files %}aria-describedby="files-hint"{% endif %}>
+          {% if type_info.multiple_files %}
+            <p class="field-hint" id="files-hint">You can select several files at once.</p>
+          {% endif %}
         </div>
 
         <div class="field field--checkbox">
           <input type="checkbox" id="confirm" name="confirm" required>
-          <label for="confirm">This is my original work, and my faculty mentor has approved this submission.</label>
+          <label for="confirm">This is my original work, it meets the requirements above, and my faculty mentor has approved this submission.</label>
         </div>
 
-        <button type="submit" class="button">Submit study</button>
+        <button type="submit" class="button">Submit</button>
       </form>
     </section>
 {% endblock %}

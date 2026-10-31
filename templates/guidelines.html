@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Submission guidelines | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <h1>Submission guidelines</h1>
+      <p class="intro">The journal accepts four kinds of submissions. Check the requirements for yours before you submit.</p>
+      {% if current_role == "guest" %}
+        <p>You'll need an account to submit. <a href="{{ url_for('signup') }}">Sign up</a> or <a href="{{ url_for('login') }}">log in</a>.</p>
+      {% endif %}
+    </section>
+
+    <section>
+      {% for type_key, type_info in submission_types.items() %}
+        <article class="type-card">
+          <h2>{{ type_info.label }}</h2>
+          <p>{{ type_info.description }}</p>
+
+          <dl class="details-list">
+            <dt>Format</dt>
+            <dd>{{ type_info.format_note }}</dd>
+            <dt>Required elements</dt>
+            <dd>{{ type_info.required_elements | join(", ") | capitalize }}</dd>
+            {% if type_info.max_pages %}
+              <dt>Max length</dt>
+              <dd>{{ type_info.max_pages }} pages, excluding references</dd>
+            {% endif %}
+          </dl>
+
+          {% if current_role == "submitter" %}
+            <a href="{{ url_for('submit_study', submission_type=type_key) }}" class="button">{{ type_info.submit_label }}</a>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </section>
+{% endblock %}

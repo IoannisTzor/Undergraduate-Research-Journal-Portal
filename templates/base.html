@@ -11,12 +11,20 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="dev-bar">
+  <div class="dev-bar">
     <div class="container">
-      Viewing as: <strong>{{ current_role }}</strong>
-      {% for role in roles %}
-        <a href="{{ url_for('switch_role', role=role) }}">{{ role }}</a>
+      Viewing as:
+      <strong>
+        {% if current_user %}
+          {{ current_user.first_name }} {{ current_user.last_name }} ({{ current_role }})
+        {% else %}
+          guest
+        {% endif %}
+      </strong>
+      {% for user in dev_users %}
+        <a href="{{ url_for('dev_login', user_id=user.id) }}">{{ user.first_name }} ({{ user.role }})</a>
       {% endfor %}
+      <a href="{{ url_for('dev_logout') }}">guest</a>
     </div>
   </div>
   <header class="site-header">
@@ -30,7 +38,7 @@
 
           {% if current_role == "submitter" %}
             <li><a href="{{ url_for('my_submissions') }}">My submissions</a></li>
-            <li><a href="{{ url_for('submit_study') }}">Submit a study</a></li>
+            <li><a href="{{ url_for('guidelines') }}">Submit a study</a></li>
           {% elif current_role == "reviewer" %}
             <li><a href="{{url_for('my_assignments')}}">My assignments</a></li>
           {% elif current_role == "editor" %}
@@ -43,7 +51,7 @@
           {% if current_role == "guest" %}
             <li><a href="{{ url_for('login') }}">Log in</a></li>
           {% else %}
-            <li><a href="{{ url_for('switch_role', role='guest') }}">Log out</a></li>
+            <li><a href="{{ url_for('dev_logout') }}">Log out</a></li>
           {% endif %}
         </ul>
       </nav>

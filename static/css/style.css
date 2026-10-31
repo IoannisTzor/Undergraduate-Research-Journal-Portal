@@ -248,6 +248,14 @@ article {
   margin-bottom: 16px;
 }
 
+article h2 {
+  font-size: 1.5rem;
+  margin-bottom: 8px;
+}
+
+.type-card .details-list {
+  margin-bottom: 16px;
+}
 article h3 {
   font-size: 1.5rem;
   margin-bottom: 4px;
@@ -474,6 +482,9 @@ th {
   margin-top: 24px;
 }
 
+.submit-form {
+  margin-top: 24px;
+}
 
 /* ===== 16. Manage submission ===== */
 .reviewer-list {
