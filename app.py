@@ -7,7 +7,7 @@ from flask_migrate import Migrate
 from sqlalchemy import text
 from submission_types import SUBMISSION_TYPES
 from seed import seed_command
-from models import db, User, Submission, Review
+from models import db, User, Submission, Review, Issue
 
 from models import db
 
@@ -39,17 +39,15 @@ def role_required(role):
     return decorator
 
 
-SAMPLE_USERS = [
-    {"id": 1, "name": "Jane Doe", "email": "doe1j@cmich.edu", "role": "submitter", "joined": "August 30, 2026"},
-    {"id": 2, "name": "Dr. Maria Lopez", "email": "lopez1m@cmich.edu", "role": "reviewer", "joined": "August 12, 2026"},
-    {"id": 3, "name": "Sam Carter", "email": "carte1s@cmich.edu", "role": "reviewer", "joined": "September 2, 2026"},
-    {"id": 4, "name": "Kathryn Bleicher", "email": "bleic1k@cmich.edu", "role": "editor", "joined": "August 1, 2026"},
-    {"id": 5, "name": "Site Admin", "email": "admin@cmich.edu", "role": "admin", "joined": "August 1, 2026"},
-]
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    current_issue = db.session.scalars(
+        db.select(Issue)
+        .where(Issue.status == "published")
+        .order_by(Issue.published_at.desc())
+    ).first()
+    return render_template("index.html", current_issue=current_issue)
 
 @app.route("/about")
 def about():
@@ -196,7 +194,10 @@ def build_issue():
 @app.route("/admin/users")
 @role_required("admin")
 def manage_users():
-    return render_template("manage_users.html", users=SAMPLE_USERS)
+    users = db.session.scalars(
+        db.select(User).order_by(User.role, User.last_name)
+    ).all()
+    return render_template("manage_users.html", users=users)
 
 @app.route("/guidelines")
 def guidelines():

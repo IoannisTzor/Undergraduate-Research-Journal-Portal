@@ -3,6 +3,7 @@ from datetime import date
 import click
 from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
+from datetime import date, datetime, timezone
 
 from models import db, User, Issue, Submission, SubmissionVersion, SubmissionFile, Review
 
@@ -27,6 +28,7 @@ def seed_command():
 
     # A published issue
     spring = Issue(volume=1, semester="spring", year=2026, status="published",
+                   published_at=datetime(2026, 4, 20, tzinfo=timezone.utc),
                    editor_note="Welcome to the first issue of the STEM Student Journal.")
 
     # Submissions

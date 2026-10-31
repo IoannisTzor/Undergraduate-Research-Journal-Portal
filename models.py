@@ -30,6 +30,10 @@ class Issue(db.Model):
 
     submissions = db.relationship("Submission", back_populates="issue")
 
+    @property
+    def label(self):
+        return f"Volume {self.volume}, {self.semester.capitalize()} {self.year}"
+
 
 class Submission(db.Model):
     __tablename__ = "submissions"
