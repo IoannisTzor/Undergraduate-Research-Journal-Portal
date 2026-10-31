@@ -8,6 +8,8 @@
       <h1>{{ submission.title }}</h1>
 
       <dl class="details-list">
+        <dt>Type</dt>
+        <dd>{{ submission_types[submission.submission_type].label }}</dd>
         <dt>Status</dt>
         <dd>
           <span class="status status--{{ submission.status }}">
@@ -15,20 +17,20 @@
           </span>
         </dd>
         <dt>Discipline</dt>
-        <dd>{{ submission.discipline }}</dd>
+        <dd>{{ submission.discipline | replace("-", " ") | title }}</dd>
         <dt>Submitted</dt>
-        <dd>{{ submission.submitted }}</dd>
+        <dd>{{ submission.submitted_at | date }}</dd>
       </dl>
     </section>
 
     <section>
       <h2>Reviews</h2>
-      {% if submission.reviews %}
-        {% for review in submission.reviews %}
+      {% if reviews %}
+        {% for review in reviews %}
           <article>
-            <h3>{{ review.reviewer }}</h3>
-            <p class="issue-meta">{{ review.date }} | Recommendation: {{ review.recommendation }}</p>
-            <p>{{ review.comments }}</p>
+            <h3>Reviewer {{ loop.index }}</h3>
+            <p class="issue-meta">Recommendation: {{ review.recommendation | replace("-", " ") | capitalize }}</p>
+            <p>{{ review.author_comments }}</p>
           </article>
         {% endfor %}
       {% else %}

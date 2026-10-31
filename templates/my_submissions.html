@@ -6,7 +6,7 @@
     <section>
       <h1>My submissions</h1>
       <p class="intro">Track your studies through review. Open a study to read its reviews or upload corrections.</p>
-      <a href="{{ url_for('submit_study') }}" class="button">Submit a new study</a>
+      <a href="{{ url_for('guidelines') }}" class="button">Submit a new study</a>
     </section>
 
     <section>
@@ -16,6 +16,7 @@
             <thead>
               <tr>
                 <th scope="col">Study</th>
+                <th scope="col">Type</th>
                 <th scope="col">Discipline</th>
                 <th scope="col">Submitted</th>
                 <th scope="col">Status</th>
@@ -25,8 +26,9 @@
               {% for submission in submissions %}
                 <tr>
                   <td><a href="{{ url_for('submission_details', submission_id=submission.id) }}">{{ submission.title }}</a></td>
-                  <td>{{ submission.discipline }}</td>
-                  <td>{{ submission.submitted }}</td>
+                  <td>{{ submission_types[submission.submission_type].label }}</td>
+                  <td>{{ submission.discipline | replace("-", " ") | title }}</td>
+                  <td>{{ submission.submitted_at | date }}</td>
                   <td>
                     <span class="status status--{{ submission.status }}">
                       {{ submission.status | replace("-", " ") | capitalize }}

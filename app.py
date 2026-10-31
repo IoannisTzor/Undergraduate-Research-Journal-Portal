@@ -9,6 +9,7 @@ from flask_migrate import Migrate
 from sqlalchemy import text
 from submission_types import SUBMISSION_TYPES
 from seed import seed_command
+from models import db, User, Submission
 
 from models import db
 
@@ -196,7 +197,14 @@ def inject_role():
         "current_role": g.user.role if g.user else "guest",
         "roles": ROLES,
         "dev_users": db.session.scalars(db.select(User).order_by(User.role, User.last_name)).all(),
+        "submission_types": SUBMISSION_TYPES,
     }
+
+@app.template_filter("date")
+def format_date(value):
+    if value is None:
+        return ""
+    return f"{value.strftime('%B')} {value.day}, {value.year}"
 
 @app.route("/submit/<submission_type>")
 @role_required("submitter")
@@ -209,14 +217,21 @@ def submit_study(submission_type):
 @app.route("/my-submissions")
 @role_required("submitter")
 def my_submissions():
-    return render_template("my_submissions.html", submissions=SAMPLE_SUBMISSIONS)
+    submissions = db.session.scalars(
+        db.select(Submission)
+        .where(Submission.author_id == g.user.id)
+        .order_by(Submission.submitted_at.desc())
+    ).all()
+    return render_template("my_submissions.html", submissions=submissions)
 
 @app.route("/my-submissions/<int:submission_id>")
 @role_required("submitter")
 def submission_details(submission_id):
-    for submission in SAMPLE_SUBMISSIONS:
-        if submission["id"] == submission_id:
-            return render_template("submission_details.html", submission=submission)
+    submission = db.session.get(Submission, submission_id)
+    if submission is None or submission.author_id != g.user.id:
+        abort(404)
+    reviews = [review for review in submission.reviews if review.status == "submitted"]
+    return render_template("submission_details.html", submission=submission, reviews=reviews)
     abort(404)
 
 @app.errorhandler(403)
