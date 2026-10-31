@@ -41,7 +41,7 @@
                 <input type="checkbox" id="study-{{ study.id }}" name="study_ids" value="{{ study.id }}">
                 <label for="study-{{ study.id }}">
                   <span class="study-option-title">{{ study.title }}</span>
-                  <span class="study-option-meta">{{ study.author }} | {{ study.discipline }}</span>
+                  <span class="study-option-meta">{{ study.author.first_name }} {{ study.author.last_name }} | {{ submission_types[study.submission_type].label }} | {{ study.discipline | replace("-", " ") | title }}</span>
                 </label>
               </div>
             {% endfor %}

@@ -9,11 +9,15 @@
 
       <dl class="details-list">
         <dt>Author</dt>
-        <dd>{{ submission.author }}</dd>
+        <dd>{{ submission.author.first_name }} {{ submission.author.last_name }}</dd>
+        <dt>Type</dt>
+        <dd>{{ submission_types[submission.submission_type].label }}</dd>
         <dt>Discipline</dt>
-        <dd>{{ submission.discipline }}</dd>
+        <dd>{{ submission.discipline | replace("-", " ") | title }}</dd>
+        <dt>Faculty mentor</dt>
+        <dd>{{ submission.mentor }}</dd>
         <dt>Submitted</dt>
-        <dd>{{ submission.submitted }}</dd>
+        <dd>{{ submission.submitted_at | date }}</dd>
         <dt>Status</dt>
         <dd>
           <span class="status status--{{ submission.status }}">
@@ -22,18 +26,23 @@
         </dd>
       </dl>
 
-      <p class="study-download"><a href="#" class="button">Download the study (PDF)</a></p>
+      {% if submission.abstract %}
+        <h2>{{ submission_types[submission.submission_type].abstract_label }}</h2>
+        <p>{{ submission.abstract }}</p>
+      {% endif %}
+
+      <p class="study-download"><a href="#" class="button">Download the study</a></p>
     </section>
 
     <section>
       <h2>Reviewers</h2>
-      {% if submission.reviewers %}
+      {% if submission.reviews %}
         <ul class="reviewer-list">
-          {% for reviewer in submission.reviewers %}
+          {% for review in submission.reviews %}
             <li>
-              <span>{{ reviewer.name }}</span>
-              <span class="status status--{{ reviewer.review_status }}">
-                {{ reviewer.review_status | replace("-", " ") | capitalize }}
+              <span>{{ review.reviewer.first_name }} {{ review.reviewer.last_name }} (due {{ review.due_date | date }})</span>
+              <span class="status status--{{ review.status }}">
+                {{ review.status | replace("-", " ") | capitalize }}
               </span>
             </li>
           {% endfor %}
@@ -43,34 +52,38 @@
       {% endif %}
 
       {% if submission.status not in ["accepted", "rejected", "published"] %}
-        <form method="post" class="form-page form-page--wide assign-form">
-          <h3>Assign a reviewer</h3>
-          <div class="field">
-            <label for="reviewer">Reviewer</label>
-            <select id="reviewer" name="reviewer" required>
-              <option value="">Choose a reviewer</option>
-              {% for name in reviewer_options %}
-                <option value="{{ name }}">{{ name }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="field">
-            <label for="due_date">Review due</label>
-            <input type="date" id="due_date" name="due_date" required>
-          </div>
-          <button type="submit" name="action" value="assign" class="button">Assign reviewer</button>
-        </form>
+        {% if reviewer_options %}
+          <form method="post" class="form-page form-page--wide assign-form">
+            <h3>Assign a reviewer</h3>
+            <div class="field">
+              <label for="reviewer">Reviewer</label>
+              <select id="reviewer" name="reviewer_id" required>
+                <option value="">Choose a reviewer</option>
+                {% for user in reviewer_options %}
+                  <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="field">
+              <label for="due_date">Review due</label>
+              <input type="date" id="due_date" name="due_date" required>
+            </div>
+            <button type="submit" name="action" value="assign" class="button">Assign reviewer</button>
+          </form>
+        {% else %}
+          <p class="field-hint">Every reviewer is already assigned to this study.</p>
+        {% endif %}
       {% endif %}
     </section>
 
     <section>
       <h2>Reviews</h2>
-      {% if submission.reviews %}
-        {% for review in submission.reviews %}
+      {% if submitted_reviews %}
+        {% for review in submitted_reviews %}
           <article>
-            <h3>{{ review.reviewer }}</h3>
-            <p class="issue-meta">{{ review.date }} | Recommendation: {{ review.recommendation }}</p>
-            <p>{{ review.comments }}</p>
+            <h3>{{ review.reviewer.first_name }} {{ review.reviewer.last_name }}</h3>
+            <p class="issue-meta">{{ review.submitted_at | date }} | Recommendation: {{ review.recommendation | replace("-", " ") | capitalize }}</p>
+            <p>{{ review.author_comments }}</p>
             {% if review.editor_comments %}
               <div class="confidential">
                 <p class="confidential-label">Confidential, for the editor only</p>

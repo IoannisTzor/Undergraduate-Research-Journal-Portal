@@ -46,9 +46,13 @@ def seed_command():
                        submission_type="review-paper", discipline="engineering", mentor="Dr. Omar Haddad",
                        abstract="A review of published studies on cold-weather solar performance.",
                        status="submitted")
+    honey = Submission(author=alex, title="Antibacterial properties of local honey",
+                       submission_type="other", discipline="chemistry", mentor="Dr. Lena Fischer",
+                       abstract="An interview and photo essay on testing honey from three local farms.",
+                       status="accepted")
 
     # One original version, with one file, for each submission
-    for submission in [soil, cache, river, solar]:
+    for submission in [soil, cache, river, solar, honey]:
         extension = "png" if submission.submission_type == "poster" else "pdf"
         version = SubmissionVersion(submission=submission, version_number=1)
         SubmissionFile(version=version, file_path=f"uploads/test-{submission.title[:10]}.{extension}",

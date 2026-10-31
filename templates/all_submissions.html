@@ -15,21 +15,23 @@
             <thead>
               <tr>
                 <th scope="col">Study</th>
+                <th scope="col">Type</th>
                 <th scope="col">Author</th>
                 <th scope="col">Submitted</th>
                 <th scope="col">Reviewers</th>
                 <th scope="col">Status</th>
               </tr>
             </thead>
-            <tbody>
+              <tbody>
               {% for submission in submissions %}
                 <tr>
                   <td><a href="{{ url_for('manage_submission', submission_id=submission.id) }}">{{ submission.title }}</a></td>
-                  <td>{{ submission.author }}</td>
-                  <td>{{ submission.submitted }}</td>
+                  <td>{{ submission_types[submission.submission_type].label }}</td>
+                  <td>{{ submission.author.first_name }} {{ submission.author.last_name }}</td>
+                  <td>{{ submission.submitted_at | date }}</td>
                   <td>
-                    {% if submission.reviewers %}
-                      {{ submission.reviewers | length }} assigned
+                    {% if submission.reviews %}
+                      {{ submission.reviews | length }} assigned
                     {% else %}
                       <strong>None assigned</strong>
                     {% endif %}

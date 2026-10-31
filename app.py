@@ -38,91 +38,6 @@ def role_required(role):
         return wrapped
     return decorator
 
-SAMPLE_SUBMISSIONS = [
-{
-        "id": 1,
-        "title": "How soil microbes respond to drought",
-        "discipline": "Biology",
-        "submitted": "September 12, 2026",
-        "status": "revisions-requested",
-        "author": "Jane Doe",
-        "reviewers": [
-            {"name": "Dr. Maria Lopez", "review_status": "submitted"},
-            {"name": "Sam Carter", "review_status": "submitted"},
-        ],
-        "reviews": [
-            {
-                "reviewer": "Reviewer 1",
-                "date": "October 3, 2026",
-                "recommendation": "Minor revisions",
-                "comments": "Clear question and good sampling design. Please explain how soil moisture was measured, and add error bars to Figure 2.",
-                "editor_comments": "Figure 2 looks very similar to one in a 2021 paper. Worth checking with the author.",
-            },
-            {
-                "reviewer": "Reviewer 2",
-                "date": "October 6, 2026",
-                "recommendation": "Accept after revisions",
-                "comments": "Strong discussion section. The abstract should mention the six-week timeframe.",
-            },
-        ],
-    },
-    {
-        "id": 2,
-        "title": "Measuring cache effects in sorting algorithms",
-        "discipline": "Computer Science",
-        "submitted": "September 30, 2026",
-        "status": "under-review",
-        "author": "Alex Lee",
-        "reviewers": [
-            {"name": "Dr. Ken Wu", "review_status": "not-started"},
-        ],
-    },
-    {
-        "id": 3,
-        "title": "Tracking sediment in the Chippewa River",
-        "discipline": "Environmental Science",
-        "submitted": "April 2, 2026",
-        "status": "published",
-        "author": "Priya Shah",
-        "reviewers": [
-            {"name": "Dr. Maria Lopez", "review_status": "submitted"},
-            {"name": "Dr. Ken Wu", "review_status": "submitted"},
-        ],
-    },
-        {
-        "id": 4,
-        "title": "Solar panel efficiency in Michigan winters",
-        "discipline": "Engineering",
-        "submitted": "October 18, 2026",
-        "status": "submitted",
-        "author": "Omar Haddad",
-        "reviewers": [],
-    },
-        {
-        "id": 5,
-        "title": "Graph coloring for exam scheduling",
-        "discipline": "Mathematics",
-        "submitted": "August 28, 2026",
-        "status": "accepted",
-        "author": "Lena Fischer",
-        "reviewers": [
-            {"name": "Dr. Ana Ruiz", "review_status": "submitted"},
-        ],
-    },
-    {
-        "id": 6,
-        "title": "Antibacterial properties of local honey",
-        "discipline": "Chemistry",
-        "submitted": "September 4, 2026",
-        "status": "accepted",
-        "author": "Marcus Bell",
-        "reviewers": [
-            {"name": "Sam Carter", "review_status": "submitted"},
-            {"name": "Dr. Maria Lopez", "review_status": "submitted"},
-        ],
-    },
-]
-SAMPLE_REVIEWERS = ["Dr. Maria Lopez", "Dr. Ken Wu", "Sam Carter", "Dr. Ana Ruiz"]
 
 SAMPLE_USERS = [
     {"id": 1, "name": "Jane Doe", "email": "doe1j@cmich.edu", "role": "submitter", "joined": "August 30, 2026"},
@@ -237,19 +152,32 @@ def write_review(review_id):
 @app.route("/editor/submissions")
 @role_required("editor")
 def all_submissions():
-    return render_template("all_submissions.html", submissions=SAMPLE_SUBMISSIONS)
+    submissions = db.session.scalars(
+        db.select(Submission).order_by(Submission.submitted_at.desc())
+    ).all()
+    return render_template("all_submissions.html", submissions=submissions)
 
 @app.route("/editor/submissions/<int:submission_id>")
 @role_required("editor")
 def manage_submission(submission_id):
-    for submission in SAMPLE_SUBMISSIONS:
-        if submission["id"] == submission_id:
-            return render_template(
-                "manage_submission.html",
-                submission=submission,
-                reviewer_options=SAMPLE_REVIEWERS,
-            )
-    abort(404)
+    submission = db.session.get(Submission, submission_id)
+    if submission is None:
+        abort(404)
+
+    assigned_ids = [review.reviewer_id for review in submission.reviews]
+    reviewer_options = db.session.scalars(
+        db.select(User)
+        .where(User.role == "reviewer", User.id.not_in(assigned_ids))
+        .order_by(User.last_name)
+    ).all()
+
+    submitted_reviews = [review for review in submission.reviews if review.status == "submitted"]
+    return render_template(
+        "manage_submission.html",
+        submission=submission,
+        reviewer_options=reviewer_options,
+        submitted_reviews=submitted_reviews,
+    )
 
 @app.errorhandler(404)
 def page_not_found(error):
@@ -258,7 +186,11 @@ def page_not_found(error):
 @app.route("/editor/build-issue")
 @role_required("editor")
 def build_issue():
-    accepted = [s for s in SAMPLE_SUBMISSIONS if s["status"] == "accepted"]
+    accepted = db.session.scalars(
+        db.select(Submission)
+        .where(Submission.status == "accepted", Submission.issue_id.is_(None))
+        .order_by(Submission.title)
+    ).all()
     return render_template("build_issue.html", accepted=accepted)
 
 @app.route("/admin/users")
