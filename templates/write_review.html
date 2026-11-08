@@ -36,41 +36,34 @@
         <h2>Write your review</h2>
 
         <form method="post" enctype="multipart/form-data">
-          <fieldset class="field">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                   <fieldset class="field">
             <legend>Recommendation</legend>
-            <div class="radio-option">
-              <input type="radio" id="rec-accept" name="recommendation" value="accept" required>
-              <label for="rec-accept">Accept</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="rec-minor" name="recommendation" value="minor-revisions">
-              <label for="rec-minor">Minor revisions</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="rec-major" name="recommendation" value="major-revisions">
-              <label for="rec-major">Major revisions</label>
-            </div>
-            <div class="radio-option">
-              <input type="radio" id="rec-reject" name="recommendation" value="reject">
-              <label for="rec-reject">Reject</label>
-            </div>
+            {% for key, label in recommendations.items() %}
+              <div class="radio-option">
+                <input type="radio" id="rec-{{ key }}" name="recommendation" value="{{ key }}"
+                       {% if loop.first %}required{% endif %}
+                       {% if form.get('recommendation') == key %}checked{% endif %}>
+                <label for="rec-{{ key }}">{{ label }}</label>
+              </div>
+            {% endfor %}
           </fieldset>
 
           <div class="field">
             <label for="author_comments">Comments for the author</label>
-            <textarea id="author_comments" name="author_comments" rows="8" required aria-describedby="author-comments-hint"></textarea>
+            <textarea id="author_comments" name="author_comments" rows="8" required aria-describedby="author-comments-hint">{{ form.get('author_comments', '') }}</textarea>
             <p class="field-hint" id="author-comments-hint">The student will see these comments. Be specific and constructive.</p>
           </div>
 
           <div class="field">
             <label for="editor_comments">Confidential comments for the editor</label>
-            <textarea id="editor_comments" name="editor_comments" rows="4" aria-describedby="editor-comments-hint"></textarea>
+            <textarea id="editor_comments" name="editor_comments" rows="4" aria-describedby="editor-comments-hint">{{ form.get('editor_comments', '') }}</textarea>
             <p class="field-hint" id="editor-comments-hint">Optional. Only the editor will see these.</p>
           </div>
 
           <div class="field">
-            <label for="annotated_file">Annotated study (PDF)</label>
-            <input type="file" id="annotated_file" name="annotated_file" accept=".pdf,application/pdf" aria-describedby="annotated-hint">
+            <label for="annotated_file">Annotated study (PDF or PNG)</label>
+            <input type="file" id="annotated_file" name="annotated_file" accept=".pdf,.png" aria-describedby="annotated-hint">
             <p class="field-hint" id="annotated-hint">Optional. Upload the study with your notes on it.</p>
           </div>
 

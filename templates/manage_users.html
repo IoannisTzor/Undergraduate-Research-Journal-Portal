@@ -30,6 +30,7 @@
                   <td>{{ user.created_at | date }}</td>
                   <td>
                     <form method="post" class="row-form">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                       <input type="hidden" name="user_id" value="{{ user.id }}">
                       <label for="role-{{ user.id }}" class="visually-hidden">Role for {{ user.name }}</label>
                       <select id="role-{{ user.id }}" name="role">
@@ -42,6 +43,7 @@
                   </td>
                   <td>
                     <form method="post" onsubmit="return confirm('Delete the account for {{ user.name }}? This cannot be undone.');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                       <input type="hidden" name="user_id" value="{{ user.id }}">
                       <button type="submit" name="action" value="delete" class="button button--secondary button--small">Delete<span class="visually-hidden"> {{ user.name }}</span></button>
                     </form>
@@ -59,6 +61,7 @@
     <section class="form-page form-page--wide">
       <h2>Add an account</h2>
       <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="field">
           <label for="new_name">Full name</label>
           <input type="text" id="new_name" name="name" required>

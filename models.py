@@ -2,7 +2,6 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
-
 class User(db.Model):
     __tablename__ = "users"
 
@@ -59,6 +58,13 @@ class Submission(db.Model):
         back_populates="submission",
         order_by="SubmissionVersion.version_number",
     )
+    @property
+    def current_round(self):
+        return self.versions[-1].version_number if self.versions else 1
+
+    @property
+    def current_reviews(self):
+        return [review for review in self.reviews if review.review_round == self.current_round]
 
 
 class SubmissionVersion(db.Model):
@@ -88,10 +94,13 @@ class SubmissionFile(db.Model):
 
 class Review(db.Model):
     __tablename__ = "reviews"
-    __table_args__ = (db.UniqueConstraint("submission_id", "reviewer_id"),)
+    __table_args__ = (
+        db.UniqueConstraint("submission_id", "reviewer_id", "review_round", name="uq_reviews_reviewer_per_round"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     submission_id = db.Column(db.Integer, db.ForeignKey("submissions.id"), nullable=False)
+    review_round = db.Column(db.Integer, nullable=False, server_default="1")
     reviewer_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     assigned_by = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     due_date = db.Column(db.Date, nullable=False)

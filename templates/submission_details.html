@@ -23,15 +23,30 @@
       </dl>
     </section>
 
+    {% if submission.decision_note and submission.status in ["revisions-requested", "accepted", "rejected"] %}
+      <section>
+        <h2>Editor's decision</h2>
+        <div class="citation">
+          <p>{{ submission.decision_note }}</p>
+        </div>
+      </section>
+    {% endif %}
+
     <section>
       <h2>Reviews</h2>
       {% if reviews %}
-        {% for review in reviews %}
-          <article>
-            <h3>Reviewer {{ loop.index }}</h3>
-            <p class="issue-meta">Recommendation: {{ review.recommendation | replace("-", " ") | capitalize }}</p>
-            <p>{{ review.author_comments }}</p>
-          </article>
+        {% set round_count = reviews | map(attribute="review_round") | unique | list | length %}
+        {% for group in reviews | groupby("review_round") %}
+          {% if round_count > 1 %}
+            <h3>Round {{ group.grouper }}</h3>
+          {% endif %}
+          {% for review in group.list %}
+            <article>
+              <h3>Reviewer {{ loop.index }}</h3>
+              <p class="issue-meta">Recommendation: {{ review.recommendation | replace("-", " ") | capitalize }}</p>
+              <p>{{ review.author_comments }}</p>
+            </article>
+          {% endfor %}
         {% endfor %}
       {% else %}
         <p class="empty-state">No reviews yet. You'll see them here once your reviewers are done.</p>
@@ -39,19 +54,25 @@
     </section>
 
     {% if submission.status == "revisions-requested" %}
+      {% set type_info = submission_types[submission.submission_type] %}
       <section class="form-page form-page--wide">
         <h2>Upload corrections</h2>
-        <p>Upload your revised study and briefly explain what you changed in response to the reviews.</p>
+        <p>Upload your revised work and briefly explain what you changed in response to the reviews.</p>
 
         <form method="post" enctype="multipart/form-data">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
           <div class="field">
-            <label for="revised_file">Revised study (PDF)</label>
-            <input type="file" id="revised_file" name="revised_file" accept=".pdf,application/pdf" required>
+            <label for="revised_files">Revised {% if type_info.multiple_files %}files{% else %}file{% endif %} ({{ type_info.file_formats | join(" or ") | upper }})</label>
+            <input type="file" id="revised_files" name="revised_files"
+                   accept=".{{ type_info.file_formats | join(',.') }}"
+                   {% if type_info.multiple_files %}multiple{% endif %}
+                   required>
           </div>
 
           <div class="field">
             <label for="response">What did you change?</label>
-            <textarea id="response" name="response" rows="6" required></textarea>
+            <textarea id="response" name="response" rows="6" required>{{ form.get('response', '') }}</textarea>
           </div>
 
           <button type="submit" class="button">Upload corrections</button>

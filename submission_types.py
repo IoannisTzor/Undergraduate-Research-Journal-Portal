@@ -47,4 +47,21 @@ SUBMISSION_TYPES = {
         "abstract_required": True,
         "submit_label" : "Submit Another Kind of Work"
     },
+    
+}
+DISCIPLINES = {
+    "biology": "Biology",
+    "chemistry": "Chemistry",
+    "computer-science": "Computer Science",
+    "engineering": "Engineering",
+    "environmental-science": "Environmental Science",
+    "mathematics": "Mathematics",
+    "physics": "Physics",
+}
+
+RECOMMENDATIONS = {
+    "accept": "Accept",
+    "minor-revisions": "Minor revisions",
+    "major-revisions": "Major revisions",
+    "reject": "Reject",
 }

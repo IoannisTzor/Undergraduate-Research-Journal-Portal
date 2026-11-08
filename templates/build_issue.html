@@ -10,6 +10,7 @@
 
     {% if accepted %}
       <section class="form-page form-page--wide">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <form method="post">
           <fieldset class="field">
             <legend>Issue details</legend>

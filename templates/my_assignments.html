@@ -24,7 +24,7 @@
             <tbody>
               {% for review in reviews %}
                 <tr>
-                  <td><a href="{{ url_for('write_review', review_id=review.id) }}">{{ review.submission.title }}</a></td>
+                  <td><a href="{{ url_for('write_review', review_id=review.id) }}">{{ review.submission.title }}</a>{% if review.review_round > 1 %} (version {{ review.review_round }}){% endif %}</td>
                   <td>{{ submission_types[review.submission.submission_type].label }}</td>
                   <td>{{ review.submission.discipline | replace("-", " ") | title }}</td>
                   <td>{{ review.due_date | date }}</td>

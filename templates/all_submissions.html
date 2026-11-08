@@ -30,8 +30,8 @@
                   <td>{{ submission.author.first_name }} {{ submission.author.last_name }}</td>
                   <td>{{ submission.submitted_at | date }}</td>
                   <td>
-                    {% if submission.reviews %}
-                      {{ submission.reviews | length }} assigned
+                    {% if submission.current_reviews %}
+                      {{ submission.current_reviews | length }} assigned
                     {% else %}
                       <strong>None assigned</strong>
                     {% endif %}

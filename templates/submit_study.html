@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Submit a {{ type_info.label | lower }} | STEM Student Journal{% endblock %}
+{% block title %}{{ type_info.submit_label }} | STEM Student Journal{% endblock %}
 
 {% block content %}
     <section class="form-page form-page--wide">
       <p><a href="{{ url_for('guidelines') }}">Back to submission guidelines</a></p>
-      <h1>Submit a {{ type_info.label | lower }}</h1>
+      <h1>{{ type_info.submit_label }}</h1>
 
       <div class="citation">
         <p><strong>Format:</strong> {{ type_info.format_note }}</p>
@@ -16,39 +16,37 @@
       </div>
 
       <form method="post" enctype="multipart/form-data" class="submit-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
         <div class="field">
           <label for="title">Title</label>
-          <input type="text" id="title" name="title" required>
+          <input type="text" id="title" name="title" value="{{ form.get('title', '') }}" required>
         </div>
 
         <div class="field">
           <label for="discipline">Discipline</label>
           <select id="discipline" name="discipline" required>
             <option value="">Choose a discipline</option>
-            <option value="biology">Biology</option>
-            <option value="chemistry">Chemistry</option>
-            <option value="computer-science">Computer Science</option>
-            <option value="engineering">Engineering</option>
-            <option value="environmental-science">Environmental Science</option>
-            <option value="mathematics">Mathematics</option>
-            <option value="physics">Physics</option>
+            {% for key, label in disciplines.items() %}
+              <option value="{{ key }}" {% if form.get('discipline') == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
           </select>
         </div>
 
         <div class="field">
           <label for="coauthors">Co-authors</label>
-          <input type="text" id="coauthors" name="coauthors" aria-describedby="coauthors-hint">
+          <input type="text" id="coauthors" name="coauthors" value="{{ form.get('coauthors', '') }}" aria-describedby="coauthors-hint">
           <p class="field-hint" id="coauthors-hint">Optional. Separate names with commas.</p>
         </div>
 
         <div class="field">
           <label for="mentor">Faculty mentor</label>
-          <input type="text" id="mentor" name="mentor" required>
+          <input type="text" id="mentor" name="mentor" value="{{ form.get('mentor', '') }}" required>
         </div>
 
         <div class="field">
           <label for="abstract">{{ type_info.abstract_label }}</label>
-          <textarea id="abstract" name="abstract" rows="7" aria-describedby="abstract-hint" {% if type_info.abstract_required %}required{% endif %}></textarea>
+          <textarea id="abstract" name="abstract" rows="7" aria-describedby="abstract-hint" {% if type_info.abstract_required %}required{% endif %}>{{ form.get('abstract', '') }}</textarea>
           <p class="field-hint" id="abstract-hint">
             {% if type_info.abstract_required %}250 words or fewer.{% else %}Optional. A sentence or two describing your work.{% endif %}
           </p>

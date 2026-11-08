@@ -239,6 +239,18 @@ button.button {
   color: var(--text-muted);
 }
 
+.flash {
+  padding: 14px 18px;
+  margin-bottom: 24px;
+  border-left: 4px solid var(--maroon);
+  background-color: var(--light-blue);
+  font-weight: 600;
+}
+
+.flash--error {
+  background-color: var(--gold);
+  color: var(--maroon);
+}
 
 /* ===== 9. Article list ===== */
 article {

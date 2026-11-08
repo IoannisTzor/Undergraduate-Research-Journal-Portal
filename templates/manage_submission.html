@@ -35,10 +35,26 @@
     </section>
 
     <section>
+      <h2>Versions</h2>
+      {% for version in submission.versions | reverse %}
+        <article>
+          <h3>Version {{ version.version_number }}{% if loop.first %} (latest){% endif %}</h3>
+          <p class="issue-meta">Uploaded {{ version.uploaded_at | date }} | {{ version.files | length }} file{% if version.files | length != 1 %}s{% endif %}</p>
+          {% if version.response_note %}
+            <p><strong>What the author changed:</strong> {{ version.response_note }}</p>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </section>
+
+    <section>
       <h2>Reviewers</h2>
-      {% if submission.reviews %}
+      {% if submission.current_round > 1 %}
+        <p class="issue-meta">Round {{ submission.current_round }}, reviewing version {{ submission.current_round }}</p>
+      {% endif %}
+      {% if submission.current_reviews %}
         <ul class="reviewer-list">
-          {% for review in submission.reviews %}
+          {% for review in submission.current_reviews %}
             <li>
               <span>{{ review.reviewer.first_name }} {{ review.reviewer.last_name }} (due {{ review.due_date | date }})</span>
               <span class="status status--{{ review.status }}">
@@ -54,6 +70,7 @@
       {% if submission.status not in ["accepted", "rejected", "published"] %}
         {% if reviewer_options %}
           <form method="post" class="form-page form-page--wide assign-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <h3>Assign a reviewer</h3>
             <div class="field">
               <label for="reviewer">Reviewer</label>
@@ -71,7 +88,7 @@
             <button type="submit" name="action" value="assign" class="button">Assign reviewer</button>
           </form>
         {% else %}
-          <p class="field-hint">Every reviewer is already assigned to this study.</p>
+          <p class="field-hint">Every reviewer is already assigned to this version.</p>
         {% endif %}
       {% endif %}
     </section>
@@ -79,18 +96,23 @@
     <section>
       <h2>Reviews</h2>
       {% if submitted_reviews %}
-        {% for review in submitted_reviews %}
-          <article>
-            <h3>{{ review.reviewer.first_name }} {{ review.reviewer.last_name }}</h3>
-            <p class="issue-meta">{{ review.submitted_at | date }} | Recommendation: {{ review.recommendation | replace("-", " ") | capitalize }}</p>
-            <p>{{ review.author_comments }}</p>
-            {% if review.editor_comments %}
-              <div class="confidential">
-                <p class="confidential-label">Confidential, for the editor only</p>
-                <p>{{ review.editor_comments }}</p>
-              </div>
-            {% endif %}
-          </article>
+        {% for group in submitted_reviews | groupby("review_round") %}
+          <h3>Round {{ group.grouper }}</h3>
+          {% for review in group.list %}
+            <article>
+              <h3>{{ review.reviewer.first_name }} {{ review.reviewer.last_name }}</h3>
+              <p class="issue-meta">
+                {% if review.submitted_at %}{{ review.submitted_at | date }} | {% endif %}Recommendation: {{ review.recommendation | replace("-", " ") | capitalize }}
+              </p>
+              <p>{{ review.author_comments }}</p>
+              {% if review.editor_comments %}
+                <div class="confidential">
+                  <p class="confidential-label">Confidential, for the editor only</p>
+                  <p>{{ review.editor_comments }}</p>
+                </div>
+              {% endif %}
+            </article>
+          {% endfor %}
         {% endfor %}
       {% else %}
         <p class="empty-state">No reviews have been submitted yet.</p>
@@ -101,6 +123,7 @@
       <section class="form-page form-page--wide">
         <h2>Decision</h2>
         <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <fieldset class="field">
             <legend>Your decision</legend>
             <div class="radio-option">
