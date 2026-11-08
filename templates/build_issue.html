@@ -1,37 +1,65 @@
 {% extends "base.html" %}
 
-{% block title %}Build an issue | STEM Student Journal{% endblock %}
+{% block title %}{% if issue %}Edit {{ issue.label }}{% else %}Build an issue{% endif %} | STEM Student Journal{% endblock %}
 
 {% block content %}
     <section>
-      <h1>Build an issue</h1>
-      <p class="intro">Choose the accepted studies to include, fill in the issue details, then save it as a draft or publish it.</p>
+      {% if issue %}
+        <p><a href="{{ url_for('build_issue') }}">Back to Build an issue</a></p>
+        <h1>Edit draft: {{ issue.label }}</h1>
+        <p class="intro">Change the details, add or remove studies, then save your changes or publish the issue.</p>
+      {% else %}
+        <h1>Build an issue</h1>
+        <p class="intro">Choose the accepted studies to include, fill in the issue details, then save it as a draft or publish it.</p>
+      {% endif %}
     </section>
+
+    {% if drafts %}
+      <section>
+        <h2>Draft issues</h2>
+        {% for draft in drafts %}
+          <article>
+            <h3>{{ draft.label }}</h3>
+            <p class="issue-meta">{{ draft.submissions | length }} stud{% if draft.submissions | length == 1 %}y{% else %}ies{% endif %}</p>
+            <div class="form-actions">
+              <a href="{{ url_for('edit_issue', issue_id=draft.id) }}" class="button button--secondary button--small">Edit</a>
+              <form method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="issue_id" value="{{ draft.id }}">
+                <button type="submit" name="action" value="publish-draft" class="button button--small">Publish</button>
+              </form>
+            </div>
+          </article>
+        {% endfor %}
+      </section>
+    {% endif %}
 
     {% if accepted %}
       <section class="form-page form-page--wide">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h2>{% if issue %}Issue details{% else %}New issue{% endif %}</h2>
         <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
           <fieldset class="field">
             <legend>Issue details</legend>
 
             <div class="field">
               <label for="volume">Volume</label>
-              <input type="number" id="volume" name="volume" min="1" required>
+              <input type="number" id="volume" name="volume" min="1" value="{{ form.get('volume', '') }}" required>
             </div>
 
             <div class="field">
               <label for="semester">Semester</label>
               <select id="semester" name="semester" required>
                 <option value="">Choose a semester</option>
-                <option value="fall">Fall</option>
-                <option value="spring">Spring</option>
+                <option value="fall" {% if form.get('semester') == 'fall' %}selected{% endif %}>Fall</option>
+                <option value="spring" {% if form.get('semester') == 'spring' %}selected{% endif %}>Spring</option>
               </select>
             </div>
 
             <div class="field">
               <label for="year">Year</label>
-              <input type="number" id="year" name="year" min="2025" required>
+              <input type="number" id="year" name="year" min="2025" value="{{ form.get('year', '') }}" required>
             </div>
           </fieldset>
 
@@ -39,7 +67,7 @@
             <legend>Studies in this issue</legend>
             {% for study in accepted %}
               <div class="field--checkbox study-option">
-                <input type="checkbox" id="study-{{ study.id }}" name="study_ids" value="{{ study.id }}">
+                <input type="checkbox" id="study-{{ study.id }}" name="study_ids" value="{{ study.id }}" {% if study.id in selected_ids %}checked{% endif %}>
                 <label for="study-{{ study.id }}">
                   <span class="study-option-title">{{ study.title }}</span>
                   <span class="study-option-meta">{{ study.author.first_name }} {{ study.author.last_name }} | {{ submission_types[study.submission_type].label }} | {{ study.discipline | replace("-", " ") | title }}</span>
@@ -50,19 +78,26 @@
 
           <div class="field">
             <label for="editor_note">Editor's note</label>
-            <textarea id="editor_note" name="editor_note" rows="5" aria-describedby="editor-note-hint"></textarea>
+            <textarea id="editor_note" name="editor_note" rows="5" aria-describedby="editor-note-hint">{{ form.get('editor_note', '') }}</textarea>
             <p class="field-hint" id="editor-note-hint">Optional. A short introduction shown at the top of the issue.</p>
           </div>
 
           <div class="form-actions">
-            <button type="submit" name="action" value="draft" class="button button--secondary">Save as draft</button>
+            <button type="submit" name="action" value="draft" class="button button--secondary">{% if issue %}Save changes{% else %}Save as draft{% endif %}</button>
             <button type="submit" name="action" value="publish" class="button">Publish issue</button>
           </div>
         </form>
+
+        {% if issue %}
+          <form method="post" class="delete-draft" onsubmit="return confirm('Delete the draft {{ issue.label }}? Its studies will become available again.');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" name="action" value="delete" class="button button--secondary button--small">Delete draft</button>
+          </form>
+        {% endif %}
       </section>
     {% else %}
       <section>
-        <p class="empty-state">There are no accepted studies yet. Accept studies from <a href="{{ url_for('all_submissions') }}">All submissions</a> first.</p>
+        <p class="empty-state">There are no accepted studies waiting for an issue. Accept studies from <a href="{{ url_for('all_submissions') }}">All submissions</a> first.</p>
       </section>
     {% endif %}
 {% endblock %}

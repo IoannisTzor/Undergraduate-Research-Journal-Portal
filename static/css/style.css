@@ -565,6 +565,9 @@ th {
   color: var(--text-muted);
 }
 
+.delete-draft {
+  margin-top: 32px;
+}
 
 /* ===== 18. Developer role switcher (temporary, remove with real login) ===== */
 .dev-bar {

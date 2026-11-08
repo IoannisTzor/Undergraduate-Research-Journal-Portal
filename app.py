@@ -163,6 +163,121 @@ def upload_corrections(submission):
     flash("Your corrections were uploaded. The editor will take it from here.", "success")
     return redirect(url_for("submission_details", submission_id=submission.id))
 
+
+def render_issue_form(issue, form, selected_ids):
+    if issue:
+        available = db.or_(Submission.issue_id.is_(None), Submission.issue_id == issue.id)
+    else:
+        available = Submission.issue_id.is_(None)
+    accepted = db.session.scalars(
+        db.select(Submission)
+        .where(Submission.status == "accepted", available)
+        .order_by(Submission.title)
+    ).all()
+    drafts = []
+    if issue is None:
+        drafts = db.session.scalars(
+            db.select(Issue).where(Issue.status == "draft").order_by(Issue.year, Issue.volume)
+        ).all()
+    return render_template(
+        "build_issue.html",
+        issue=issue,
+        accepted=accepted,
+        drafts=drafts,
+        form=form,
+        selected_ids=selected_ids,
+    )
+
+
+def save_issue(issue, action):
+    volume = request.form.get("volume", type=int)
+    semester = request.form.get("semester", "")
+    year = request.form.get("year", type=int)
+    editor_note = request.form.get("editor_note", "").strip()
+    study_ids = request.form.getlist("study_ids", type=int)
+
+    errors = []
+    if volume is None or volume < 1:
+        errors.append("Please enter a volume number of 1 or more.")
+    if semester not in ["fall", "spring"]:
+        errors.append("Please choose a semester.")
+    if year is None or year < 2025:
+        errors.append("Please enter a valid year.")
+    if not study_ids:
+        errors.append("Please choose at least one study.")
+
+    studies = []
+    if study_ids:
+        studies = db.session.scalars(db.select(Submission).where(Submission.id.in_(study_ids))).all()
+        for study in studies:
+            in_another_issue = study.issue_id is not None and (issue is None or study.issue_id != issue.id)
+            if study.status != "accepted" or in_another_issue:
+                errors.append(f"{study.title} can no longer be added. Please check the list again.")
+        if len(studies) != len(set(study_ids)):
+            errors.append("One or more of the chosen studies no longer exists.")
+
+    if not errors:
+        existing = db.session.scalars(
+            db.select(Issue).where(Issue.volume == volume, Issue.semester == semester, Issue.year == year)
+        ).first()
+        if existing and (issue is None or existing.id != issue.id):
+            errors.append(f"{existing.label} already exists.")
+
+    if errors:
+        for error in errors:
+            flash(error, "error")
+        return render_issue_form(issue, request.form, study_ids)
+
+    if issue is None:
+        issue = Issue(status="draft")
+    issue.volume = volume
+    issue.semester = semester
+    issue.year = year
+    issue.editor_note = editor_note or None
+    db.session.add(issue)
+
+    for study in list(issue.submissions):
+        if study.id not in study_ids:
+            study.issue = None
+    for study in studies:
+        study.issue = issue
+
+    if action == "publish":
+        publish_issue(issue)
+    db.session.commit()
+
+    if action == "publish":
+        flash(f"{issue.label} is published and now on the homepage.", "success")
+        return redirect(url_for("home"))
+    flash(f"{issue.label} was saved as a draft.", "success")
+    return redirect(url_for("build_issue"))
+
+
+def delete_draft(issue):
+    label = issue.label
+    for study in list(issue.submissions):
+        study.issue = None
+    db.session.delete(issue)
+    db.session.commit()
+    flash(f"The draft {label} was deleted. Its studies are available again.", "success")
+    return redirect(url_for("build_issue"))
+
+
+def publish_issue(issue):
+    issue.status = "published"
+    issue.published_at = datetime.now(timezone.utc)
+    for study in issue.submissions:
+        study.status = "published"
+
+def publish_draft():
+    issue = db.session.get(Issue, request.form.get("issue_id", type=int) or 0)
+    if issue is None or issue.status != "draft":
+        abort(404)
+    publish_issue(issue)
+    db.session.commit()
+    flash(f"{issue.label} is published and now on the homepage.", "success")
+    return redirect(url_for("home"))
+
 @app.route("/")
 def home():
     current_issue = db.session.scalars(
@@ -438,15 +553,43 @@ def manage_submission(submission_id):
 def page_not_found(error):
     return render_template("404.html"), 404
 
-@app.route("/editor/build-issue")
+@app.route("/editor/build-issue", methods=["GET", "POST"])
 @role_required("editor")
 def build_issue():
-    accepted = db.session.scalars(
-        db.select(Submission)
-        .where(Submission.status == "accepted", Submission.issue_id.is_(None))
-        .order_by(Submission.title)
-    ).all()
-    return render_template("build_issue.html", accepted=accepted)
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "publish-draft":
+            return publish_draft()
+        if action in ["draft", "publish"]:
+            return save_issue(None, action)
+        abort(400)
+    return render_issue_form(None, form={}, selected_ids=[])
+
+
+@app.route("/editor/issues/<int:issue_id>/edit", methods=["GET", "POST"])
+@role_required("editor")
+def edit_issue(issue_id):
+    issue = db.session.get(Issue, issue_id)
+    if issue is None or issue.status != "draft":
+        abort(404)
+
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action in ["draft", "publish"]:
+            return save_issue(issue, action)
+        if action == "delete":
+            return delete_draft(issue)
+        abort(400)
+
+    form = {
+        "volume": issue.volume,
+        "semester": issue.semester,
+        "year": issue.year,
+        "editor_note": issue.editor_note or "",
+    }
+    selected_ids = [study.id for study in issue.submissions]
+    return render_issue_form(issue, form, selected_ids)
+
 
 @app.route("/admin/users")
 @role_required("admin")
