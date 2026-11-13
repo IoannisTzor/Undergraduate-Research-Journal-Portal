@@ -78,7 +78,18 @@
             <textarea id="response" name="response" rows="6" required>{{ form.get('response', '') }}</textarea>
           </div>
 
-          <button type="submit" class="button">Upload corrections</button>
+          <button type="submit" name="action" value="upload-corrections" class="button">Upload corrections</button>
+        </form>
+      </section>
+    {% endif %}
+
+    {% if can_withdraw %}
+      <section class="withdraw">
+        <h2>Withdraw this submission</h2>
+        <p>If you no longer want this study considered for the journal, you can withdraw it. Reviews that haven't started will be cancelled. This can't be undone, but you can always submit again later.</p>
+        <form method="post" onsubmit="return confirm('Withdraw {{ submission.title }}? This cannot be undone.');">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit" name="action" value="withdraw" class="button button--secondary">Withdraw submission</button>
         </form>
       </section>
     {% endif %}

@@ -471,6 +471,13 @@ th {
   border: 1px solid var(--text-muted);
 }
 
+.status--rejected,
+.status--withdrawn,
+.status--cancelled {
+  background-color: white;
+  color: var(--text-muted);
+  border: 1px solid var(--text-muted);
+}
 
 /* ===== 14. Details list ===== */
 .details-list {
@@ -498,6 +505,11 @@ th {
 
 .submit-form {
   margin-top: 24px;
+}
+
+.withdraw {
+  border-top: 1px solid var(--light-blue);
+  padding-top: 24px;
 }
 
 /* ===== 16. Manage submission ===== */

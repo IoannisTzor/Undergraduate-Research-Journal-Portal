@@ -31,7 +31,13 @@
         <h2>Your review</h2>
         <p class="empty-state">You've already submitted your review for this study. Thank you!</p>
       </section>
+    {% elif review.status == "cancelled" %}
+      <section>
+        <h2>Review cancelled</h2>
+        <p class="empty-state">The author withdrew this submission, so no review is needed.</p>
+      </section>
     {% else %}
+    
       <section class="form-page form-page--wide">
         <h2>Write your review</h2>
 

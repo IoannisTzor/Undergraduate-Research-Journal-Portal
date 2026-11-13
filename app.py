@@ -142,6 +142,7 @@ def parse_date(text):
         return None
 
 DECISIONS = ["accepted", "revisions-requested", "rejected"]
+WITHDRAWABLE = ["submitted", "under-review", "revisions-requested", "revised", "accepted"]
 
 def assign_reviewer(submission):
     reviewer_id = request.form.get("reviewer_id", type=int)
@@ -218,7 +219,14 @@ def file_errors(files, type_info):
 
 def render_submission_details(submission, form):
     reviews = [review for review in submission.reviews if review.status == "submitted"]
-    return render_template("submission_details.html", submission=submission, reviews=reviews, form=form)
+    can_withdraw = submission.status in WITHDRAWABLE and submission.issue_id is None
+    return render_template(
+        "submission_details.html",
+        submission=submission,
+        reviews=reviews,
+        form=form,
+        can_withdraw=can_withdraw,
+    )
 
 def upload_corrections(submission):
     if submission.status != "revisions-requested":
@@ -262,6 +270,22 @@ def upload_corrections(submission):
     flash("Your corrections were uploaded. The editor will take it from here.", "success")
     return redirect(url_for("submission_details", submission_id=submission.id))
 
+def withdraw_submission(submission):
+    if submission.status not in WITHDRAWABLE:
+        flash("This submission can no longer be withdrawn.", "error")
+        return redirect(url_for("submission_details", submission_id=submission.id))
+    if submission.issue_id is not None:
+        flash("This study is already part of an issue being prepared. Please contact the editor to withdraw it.", "error")
+        return redirect(url_for("submission_details", submission_id=submission.id))
+
+    submission.status = "withdrawn"
+    for review in submission.reviews:
+        if review.status == "not-started":
+            review.status = "cancelled"
+    db.session.commit()
+
+    flash("Your submission was withdrawn.", "success")
+    return redirect(url_for("submission_details", submission_id=submission.id))
 
 def render_issue_form(issue, form, selected_ids):
     if issue:
@@ -529,7 +553,12 @@ def submission_details(submission_id):
         abort(404)
 
     if request.method == "POST":
-        return upload_corrections(submission)
+        action = request.form.get("action")
+        if action == "upload-corrections":
+            return upload_corrections(submission)
+        if action == "withdraw":
+            return withdraw_submission(submission)
+        abort(400)
 
     return render_submission_details(submission, form={})
 
@@ -560,6 +589,10 @@ def write_review(review_id):
     if review.status == "submitted":
         flash("You've already submitted this review.", "error")
         return redirect(url_for("write_review", review_id=review.id))
+
+    if review.status == "cancelled":
+        flash("This review was cancelled because the author withdrew their submission.", "error")
+        return redirect(url_for("my_assignments"))
 
     # Read the form
     recommendation = request.form.get("recommendation", "")
