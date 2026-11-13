@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Submission windows | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <h1>Submission windows</h1>
+      <p class="intro">Students can only submit new work while a window is open. Windows open at the start of their first day and close at the end of their last day.</p>
+    </section>
+
+    <section>
+      <h2>All windows</h2>
+      {% if windows %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Opens</th>
+                <th scope="col">Closes</th>
+                <th scope="col">Status</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for window in windows %}
+                <tr>
+                  <td>{{ window.opens_on | date }}</td>
+                  <td>{{ window.closes_on | date }}</td>
+                  <td>
+                    {% if window.opens_on <= today and window.closes_on >= today %}
+                      <span class="status status--accepted">Open now</span>
+                    {% elif window.opens_on > today %}
+                      <span class="status">Upcoming</span>
+                    {% else %}
+                      <span class="status status--rejected">Past</span>
+                    {% endif %}
+                  </td>
+                  <td>
+                    <form method="post" onsubmit="return confirm('Delete the window from {{ window.opens_on | date }} to {{ window.closes_on | date }}?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <input type="hidden" name="window_id" value="{{ window.id }}">
+                      <button type="submit" name="action" value="delete" class="button button--secondary button--small">Delete<span class="visually-hidden"> window from {{ window.opens_on | date }}</span></button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-state">There are no submission windows yet, so submissions are closed. Add one below.</p>
+      {% endif %}
+    </section>
+
+    <section class="form-page form-page--wide">
+      <h2>Add a window</h2>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="field">
+          <label for="opens_on">Opens on</label>
+          <input type="date" id="opens_on" name="opens_on" value="{{ form.get('opens_on', '') }}" required>
+        </div>
+
+        <div class="field">
+          <label for="closes_on">Closes on (last day to submit)</label>
+          <input type="date" id="closes_on" name="closes_on" value="{{ form.get('closes_on', '') }}" required>
+        </div>
+
+        <button type="submit" name="action" value="add" class="button">Add window</button>
+      </form>
+    </section>
+{% endblock %}

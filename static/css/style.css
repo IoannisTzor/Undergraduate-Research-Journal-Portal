@@ -266,6 +266,18 @@ button.button {
   white-space: pre-line;
 }
 
+.window-status {
+  padding: 16px 20px;
+  margin-bottom: 24px;
+  background-color: white;
+  border-left: 4px solid var(--text-muted);
+  font-weight: 600;
+}
+
+.window-status--open {
+  border-left-color: var(--gold);
+}
+
 /* ===== 9. Article list ===== */
 article {
   background-color: white;

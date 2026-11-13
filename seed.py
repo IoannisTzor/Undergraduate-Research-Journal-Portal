@@ -3,9 +3,9 @@ from datetime import date
 import click
 from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
-from models import db, User, Issue, Submission, SubmissionVersion, SubmissionFile, Review, Advisor
+from models import db, User, Issue, Submission, SubmissionVersion, SubmissionFile, Review, Advisor, SubmissionWindow
 
 
 @click.command("seed")
@@ -83,3 +83,9 @@ def seed_command():
     db.session.add_all([jane, alex, maria, sam, erin, admin, spring, *advisors])
     db.session.commit()
     click.echo("Database seeded with test data.")
+
+    #submissionWindow
+    window = SubmissionWindow(
+    opens_on=date.today() - timedelta(days=30),
+    closes_on=date.today() + timedelta(days=60),
+    )

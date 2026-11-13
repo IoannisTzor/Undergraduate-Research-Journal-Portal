@@ -28,7 +28,7 @@ from flask import Flask, render_template, session, redirect, url_for, request, a
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 
-from models import db, User, Submission, SubmissionVersion, SubmissionFile, Review, Issue, Advisor
+from models import db, User, Submission, SubmissionVersion, SubmissionFile, Review, Issue, Advisor, SubmissionWindow
 from seed import seed_command
 from submission_types import SUBMISSION_TYPES, DISCIPLINES, RECOMMENDATIONS
 from uploads import file_extension, is_valid_file, save_upload
@@ -204,7 +204,44 @@ def add_advisor():
     flash(f"{first_name} {last_name} was added as an advisor for {DISCIPLINES[discipline]}.", "success")
     return redirect(url_for("manage_advisors"))
 
+def render_windows(form):
+    windows = db.session.scalars(
+        db.select(SubmissionWindow).order_by(SubmissionWindow.opens_on.desc())
+    ).all()
+    return render_template("submission_windows.html", windows=windows, today=date.today(), form=form)
 
+
+def add_window():
+    opens_on = parse_date(request.form.get("opens_on", ""))
+    closes_on = parse_date(request.form.get("closes_on", ""))
+
+    errors = []
+    if opens_on is None:
+        errors.append("Please choose an opening date.")
+    if closes_on is None:
+        errors.append("Please choose a closing date.")
+    if opens_on and closes_on and closes_on < opens_on:
+        errors.append("The closing date can't be before the opening date.")
+
+    if not errors:
+        overlap = db.session.scalars(
+            db.select(SubmissionWindow)
+            .where(SubmissionWindow.opens_on <= closes_on, SubmissionWindow.closes_on >= opens_on)
+        ).first()
+        if overlap:
+            errors.append(
+                f"That overlaps the window from {format_date(overlap.opens_on)} to {format_date(overlap.closes_on)}."
+            )
+
+    if errors:
+        for error in errors:
+            flash(error, "error")
+        return render_windows(request.form)
+
+    db.session.add(SubmissionWindow(opens_on=opens_on, closes_on=closes_on))
+    db.session.commit()
+    flash(f"Submissions will be open from {format_date(opens_on)} to {format_date(closes_on)}.", "success")
+    return redirect(url_for("submission_windows"))
 # ===== 6. Helpers: submissions, files and reviews =====
 def file_errors(files, type_info):
     errors = []
@@ -376,6 +413,20 @@ def approve_rubric(submission):
     db.session.commit()
     flash(f"The rubric from {review.reviewer.first_name} {review.reviewer.last_name} is now visible to the author.", "success")
 
+def current_window():
+    today = date.today()
+    return db.session.scalars(
+        db.select(SubmissionWindow)
+        .where(SubmissionWindow.opens_on <= today, SubmissionWindow.closes_on >= today)
+    ).first()
+
+
+def next_window():
+    return db.session.scalars(
+        db.select(SubmissionWindow)
+        .where(SubmissionWindow.opens_on > date.today())
+        .order_by(SubmissionWindow.opens_on)
+    ).first()
 
 # ===== 7. Helpers: issues =====
 def render_issue_form(issue, form, selected_ids):
@@ -554,7 +605,11 @@ def about():
 
 @app.route("/guidelines")
 def guidelines():
-    return render_template("guidelines.html", submission_types=SUBMISSION_TYPES)
+    return render_template(
+        "guidelines.html",
+        submission_window=current_window(),
+        upcoming_window=next_window(),
+    )
 
 
 @app.route("/past-issues")
@@ -600,6 +655,10 @@ def submit_study(submission_type):
     type_info = SUBMISSION_TYPES.get(submission_type)
     if type_info is None:
         abort(404)
+    
+    if current_window() is None:
+        flash("Submissions are closed right now. Check the guidelines page for the next submission window.", "error")
+        return redirect(url_for("guidelines"))
 
     if request.method == "GET":
         return render_template("submit_study.html", type_key=submission_type, type_info=type_info, form={})
@@ -887,6 +946,23 @@ def manage_advisors():
         abort(400)
     return render_advisors(form={})
 
+@app.route("/editor/submission-windows", methods=["GET", "POST"])
+@role_required("editor")
+def submission_windows():
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "add":
+            return add_window()
+        if action == "delete":
+            window = db.session.get(SubmissionWindow, request.form.get("window_id", type=int) or 0)
+            if window is None:
+                abort(404)
+            db.session.delete(window)
+            db.session.commit()
+            flash("The submission window was deleted.", "success")
+            return redirect(url_for("submission_windows"))
+        abort(400)
+    return render_windows(form={})
 
 # ===== 12. Routes: admin =====
 @app.route("/admin/users", methods=["GET", "POST"])

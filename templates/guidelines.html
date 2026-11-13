@@ -5,33 +5,59 @@
 {% block content %}
     <section>
       <h1>Submission guidelines</h1>
-      <p class="intro">The journal accepts four kinds of submissions. Check the requirements for yours before you submit.</p>
+      <p class="intro">Any Central Michigan University undergraduate who has done work in science, technology, engineering or math is encouraged to submit.</p>
+      <p>This can include capstones, research-oriented coursework, independent projects, or anything else you have done in STEM. You don't need to be a STEM major or minor, and your work doesn't need to be at a capstone level. Submissions can have several authors and advisors, though advisors are not required.</p>
+      <p>Every submission that passes the editors' requirements check gets detailed feedback from our peer reviewers, based on rubrics made for each type of work. Even if your work isn't accepted, you'll get suggestions for improving it, and you can submit again. There's no downside to submitting.</p>
+      {% if submission_window %}
+        <p class="window-status window-status--open">Submissions are open until {{ submission_window.closes_on | date }}.</p>
+      {% elif upcoming_window %}
+        <p class="window-status">Submissions are closed. The next submission window opens on {{ upcoming_window.opens_on | date }}.</p>
+      {% else %}
+        <p class="window-status">Submissions are closed right now. The next submission window will be announced soon.</p>
+      {% endif %}
       {% if current_role == "guest" %}
         <p>You'll need an account to submit. <a href="{{ url_for('signup') }}">Sign up</a> or <a href="{{ url_for('login') }}">log in</a>.</p>
       {% endif %}
     </section>
 
     <section>
+      <h2>Types of submissions</h2>
+      <p>The journal accepts four types of submissions. Read the requirements for yours carefully before submitting. Occasional typos won't lead to rejection, but major issues that affect readability may cause your work to be returned. If your work doesn't meet the formatting requirements, the editors may return it and invite you to adjust it and submit again.</p>
+
       {% for type_key, type_info in submission_types.items() %}
         <article class="type-card">
-          <h2>{{ type_info.label }}</h2>
+          <h3>{{ type_info.label }}</h3>
           <p>{{ type_info.description }}</p>
-
-          <dl class="details-list">
-            <dt>Format</dt>
-            <dd>{{ type_info.format_note }}</dd>
-            <dt>Required elements</dt>
-            <dd>{{ type_info.required_elements | join(", ") | capitalize }}</dd>
-            {% if type_info.max_pages %}
-              <dt>Max length</dt>
-              <dd>{{ type_info.max_pages }} pages, excluding references</dd>
-            {% endif %}
-          </dl>
-
-          {% if current_role == "submitter" %}
+          {% include "_type_requirements.html" %}
+          {% if current_role == "submitter" and submission_window %}
             <a href="{{ url_for('submit_study', submission_type=type_key) }}" class="button">{{ type_info.submit_label }}</a>
           {% endif %}
         </article>
       {% endfor %}
+    </section>
+
+    <section>
+      <h2>What happens after you submit</h2>
+      <ol class="steps">
+        <li><strong>Requirements check.</strong> An editor checks that your work meets the formatting requirements for its type.</li>
+        <li><strong>Peer review.</strong> Your work is assigned to a peer reviewer, who reads it closely and fills in a rubric.</li>
+        <li><strong>Decision.</strong> You receive one of three decisions: <em>accepted</em>, <em>needs revisions</em> or <em>rejected</em>, with feedback either way.</li>
+        <li><strong>Revisions.</strong> If revisions are needed, you'll have a deadline to make them. The reviewer then checks your revised work and may suggest final adjustments.</li>
+        <li><strong>Advisory board approval.</strong> Accepted work gets a final check from a faculty advisor in its discipline.</li>
+        <li><strong>Publication.</strong> Your work appears in the next issue of the journal.</li>
+      </ol>
+      <p>If your work is rejected, the feedback will help you improve it, and you're welcome to submit again. If you can't finish revisions before the deadline, your work moves to the next edition of the journal.</p>
+    </section>
+
+    <section class="submit-prompt">
+      <h2>Before you submit, check that</h2>
+      <ul>
+        <li>the submission window is open</li>
+        <li>you are a CMU student</li>
+        <li>you have done work in STEM</li>
+        <li>your submission follows APA 7th Edition formatting</li>
+        <li>your submission is within the maximum length or size</li>
+        <li>your submission is the correct file type (PDF or PNG)</li>
+      </ul>
     </section>
 {% endblock %}
