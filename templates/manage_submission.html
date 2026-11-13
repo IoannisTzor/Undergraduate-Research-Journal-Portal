@@ -30,8 +30,6 @@
         <h2>{{ submission_types[submission.submission_type].abstract_label }}</h2>
         <p>{{ submission.abstract }}</p>
       {% endif %}
-
-      <p class="study-download"><a href="#" class="button">Download the study</a></p>
     </section>
 
     <section>
@@ -40,6 +38,11 @@
         <article>
           <h3>Version {{ version.version_number }}{% if loop.first %} (latest){% endif %}</h3>
           <p class="issue-meta">Uploaded {{ version.uploaded_at | date }} | {{ version.files | length }} file{% if version.files | length != 1 %}s{% endif %}</p>
+          <ul class="file-list">
+            {% for file in version.files %}
+              <li><a href="{{ url_for('download_file', file_id=file.id) }}" target="_blank" rel="noopener">{{ file.original_name }}<span class="visually-hidden"> (opens in a new tab)</span></a></li>
+            {% endfor %}
+          </ul>
           {% if version.response_note %}
             <p><strong>What the author changed:</strong> {{ version.response_note }}</p>
           {% endif %}
@@ -67,7 +70,7 @@
         <p class="empty-state">No reviewers assigned yet.</p>
       {% endif %}
 
-      {% if submission.status not in ["accepted", "rejected", "published"] %}
+      {% if submission.status not in ["accepted", "rejected", "published", "withdrawn"] %}
         {% if reviewer_options %}
           <form method="post" class="form-page form-page--wide assign-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -96,6 +99,7 @@
     <section>
       <h2>Reviews</h2>
       {% if submitted_reviews %}
+        <p class="field-hint">Before approving a rubric, check it doesn't reveal the reviewer's name. In Word: File, Info, Check for Issues, Inspect Document.</p>
         {% for group in submitted_reviews | groupby("review_round") %}
           <h3>Round {{ group.grouper }}</h3>
           {% for review in group.list %}
@@ -105,6 +109,20 @@
                 {% if review.submitted_at %}{{ review.submitted_at | date }} | {% endif %}Recommendation: {{ review.recommendation | replace("-", " ") | capitalize }}
               </p>
               <p>{{ review.author_comments }}</p>
+              {% if review.rubric_file %}
+                <div class="rubric-row">
+                  <a href="{{ url_for('download_rubric', review_id=review.id) }}">Completed rubric</a>
+                  {% if review.rubric_approved %}
+                    <span class="status status--accepted">Shared with the author</span>
+                  {% else %}
+                    <form method="post">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <input type="hidden" name="review_id" value="{{ review.id }}">
+                      <button type="submit" name="action" value="approve-rubric" class="button button--small">Approve for the author</button>
+                    </form>
+                  {% endif %}
+                </div>
+              {% endif %}
               {% if review.editor_comments %}
                 <div class="confidential">
                   <p class="confidential-label">Confidential, for the editor only</p>
@@ -119,7 +137,7 @@
       {% endif %}
     </section>
 
-    {% if submission.status not in ["accepted", "rejected", "published"] %}
+    {% if submission.status not in ["accepted", "rejected", "published", "withdrawn"] %}
       <section class="form-page form-page--wide">
         <h2>Decision</h2>
         <form method="post">

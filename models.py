@@ -11,6 +11,7 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="submitter")
+    preferred_discipline = db.Column(db.String(50))
     created_at = db.Column(db.DateTime(timezone=True), nullable=False, server_default=db.func.now())
 
     submissions = db.relationship("Submission", back_populates="author")
@@ -24,6 +25,7 @@ class Issue(db.Model):
     semester = db.Column(db.String(10), nullable=False)
     year = db.Column(db.Integer, nullable=False)
     editor_note = db.Column(db.Text)
+    compiled_pdf = db.Column(db.String(500))
     status = db.Column(db.String(20), nullable=False, default="draft")
     published_at = db.Column(db.DateTime(timezone=True))
 
@@ -109,9 +111,19 @@ class Review(db.Model):
     recommendation = db.Column(db.String(30))
     author_comments = db.Column(db.Text)
     editor_comments = db.Column(db.Text)
-    annotated_file = db.Column(db.String(500))
+    rubric_file = db.Column(db.String(500))
+    rubric_approved = db.Column(db.Boolean, nullable=False, server_default=db.false())
     submitted_at = db.Column(db.DateTime(timezone=True))
 
     submission = db.relationship("Submission", back_populates="reviews")
     reviewer = db.relationship("User", foreign_keys=[reviewer_id])
     assigner = db.relationship("User", foreign_keys=[assigned_by])
+
+class Advisor(db.Model):
+    __tablename__ = "advisors"
+
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    discipline = db.Column(db.String(50), nullable=False)

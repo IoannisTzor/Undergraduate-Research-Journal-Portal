@@ -4,6 +4,7 @@ import uuid
 FILE_SIGNATURES = {
     "pdf": b"%PDF-",
     "png": b"\x89PNG\r\n\x1a\n",
+    "docx": b"PK\x03\x04",
 }
 
 

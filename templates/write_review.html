@@ -61,10 +61,14 @@
             <p class="field-hint" id="editor-comments-hint">Optional. Only the editor will see these.</p>
           </div>
 
+          {% set type_info = submission_types[review.submission.submission_type] %}
           <div class="field">
-            <label for="annotated_file">Annotated study (PDF or PNG)</label>
-            <input type="file" id="annotated_file" name="annotated_file" accept=".pdf,.png" aria-describedby="annotated-hint">
-            <p class="field-hint" id="annotated-hint">Optional. Upload the study with your notes on it.</p>
+            <label for="rubric_file">Completed rubric (Word document)</label>
+            <p class="field-hint" id="rubric-hint">
+              Download the <a href="{{ url_for('static', filename=type_info.rubric_file) }}">blank {{ type_info.label | lower }} rubric</a>,
+              fill it in, then upload it here. The editor checks rubrics before the author sees them.
+            </p>
+            <input type="file" id="rubric_file" name="rubric_file" accept=".docx" required aria-describedby="rubric-hint">
           </div>
 
           <button type="submit" class="button">Submit review</button>

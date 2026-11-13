@@ -45,6 +45,9 @@
               <h3>Reviewer {{ loop.index }}</h3>
               <p class="issue-meta">Recommendation: {{ review.recommendation | replace("-", " ") | capitalize }}</p>
               <p>{{ review.author_comments }}</p>
+              {% if review.rubric_file and review.rubric_approved %}
+                <p><a href="{{ url_for('download_rubric', review_id=review.id) }}">Reviewer {{ loop.index }}'s rubric</a></p>
+              {% endif %}
             </article>
           {% endfor %}
         {% endfor %}

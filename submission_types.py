@@ -9,7 +9,8 @@ SUBMISSION_TYPES = {
         "max_pages": 20,
         "abstract_label": "Abstract",
         "abstract_required": True,
-        "submit_label" : "Submit a Reasearch Paper"
+        "submit_label" : "Submit a Reasearch Paper",
+        "rubric_file": "rubrics/research-paper.docx"
     },
     "review-paper": {
         "label": "Review paper",
@@ -21,7 +22,8 @@ SUBMISSION_TYPES = {
         "max_pages": 10,
         "abstract_label": "Abstract",
         "abstract_required": True,
-        "submit_label" : "Submit a Review"
+        "submit_label" : "Submit a Review",
+        "rubric_file": "rubrics/review-paper.docx"
     },
     "poster": {
         "label": "Poster",
@@ -33,7 +35,8 @@ SUBMISSION_TYPES = {
         "max_pages": None,
         "abstract_label": "Short description",
         "abstract_required": False,
-        "submit_label" : "Submit a Poster"
+        "submit_label" : "Submit a Poster",
+        "rubric_file": "rubrics/poster.docx"
     },
     "other": {
         "label": "Other",
@@ -45,7 +48,8 @@ SUBMISSION_TYPES = {
         "max_pages": 15,
         "abstract_label": "Summary or abstract",
         "abstract_required": True,
-        "submit_label" : "Submit Another Kind of Work"
+        "submit_label" : "Submit Another Kind of Work",
+        "rubric_file": "rubrics/other.docx"
     },
     
 }

@@ -477,7 +477,9 @@ th {
   display: grid;
   grid-template-columns: max-content 1fr;
   gap: 10px 24px;
+  align-items: baseline;
   margin-top: 16px;
+  margin-bottom: 32px;
 }
 
 .details-list dt {
@@ -537,6 +539,14 @@ th {
 
 .confidential p:last-child {
   margin-bottom: 0;
+}
+
+.rubric-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
 }
 
 

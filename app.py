@@ -33,6 +33,59 @@ def load_current_user():
     g.user = db.session.get(User, user_id) if user_id else None
 
 ROLES = ["guest", "submitter", "reviewer", "editor", "admin"]
+ASSIGNABLE_ROLES = [role for role in ROLES if role != "guest"]
+
+def change_role(user):
+    new_role = request.form.get("role", "")
+    if new_role not in ASSIGNABLE_ROLES:
+        flash("Please choose a valid role.", "error")
+        return
+    if user.id == g.user.id:
+        flash("You can't change your own role.", "error")
+        return
+    if new_role == user.role:
+        flash(f"{user.first_name} {user.last_name} is already a {new_role}.", "error")
+        return
+
+    user.role = new_role
+    db.session.commit()
+    flash(f"{user.first_name} {user.last_name} is now a {new_role}.", "success")
+
+
+def delete_user(user):
+    name = f"{user.first_name} {user.last_name}"
+    if user.id == g.user.id:
+        flash("You can't delete your own account.", "error")
+        return
+
+    has_reviews = db.session.scalars(
+        db.select(Review).where(db.or_(Review.reviewer_id == user.id, Review.assigned_by == user.id))
+    ).first()
+    if user.submissions or has_reviews:
+        flash(f"{name} has submissions or reviews on the site, so their account can't be deleted. You can change their role instead.", "error")
+        return
+
+    db.session.delete(user)
+    db.session.commit()
+    flash(f"The account for {name} was deleted.", "success")
+
+
+def set_discipline(user):
+    discipline = request.form.get("discipline", "")
+    if user.role != "reviewer":
+        flash("Only reviewers have a preferred discipline.", "error")
+        return
+    if discipline and discipline not in DISCIPLINES:
+        flash("Please choose a valid discipline.", "error")
+        return
+
+    user.preferred_discipline = discipline or None
+    db.session.commit()
+    if discipline:
+        flash(f"{user.first_name} {user.last_name} now prefers {DISCIPLINES[discipline]}.", "success")
+    else:
+        flash(f"{user.first_name} {user.last_name} no longer has a preferred discipline.", "success")
+
 
 def role_required(role):
     def decorator(view):
@@ -104,7 +157,15 @@ def record_decision(submission):
     submission.decision_note = note
     db.session.commit()
     flash("Your decision was sent to the author.", "success")
-    
+
+def approve_rubric(submission):
+    review = db.session.get(Review, request.form.get("review_id", type=int) or 0)
+    if review is None or review.submission_id != submission.id or not review.rubric_file:
+        abort(404)
+    review.rubric_approved = True
+    db.session.commit()
+    flash(f"The rubric from {review.reviewer.first_name} {review.reviewer.last_name} is now visible to the author.", "success")
+
 def file_errors(files, type_info):
     errors = []
     if not files:
@@ -466,8 +527,8 @@ def write_review(review_id):
     recommendation = request.form.get("recommendation", "")
     author_comments = request.form.get("author_comments", "").strip()
     editor_comments = request.form.get("editor_comments", "").strip()
-    annotated = request.files.get("annotated_file")
-    has_file = annotated is not None and annotated.filename != ""
+    rubric = request.files.get("rubric_file")
+    has_rubric = rubric is not None and rubric.filename != ""
 
     # Check it
     errors = []
@@ -475,8 +536,10 @@ def write_review(review_id):
         errors.append("Please choose a recommendation.")
     if not author_comments:
         errors.append("Please write your comments for the author.")
-    if has_file and not is_valid_file(annotated, ["pdf", "png"]):
-        errors.append(f"{annotated.filename} isn't a valid PDF or PNG file.")
+    if not has_rubric:
+        errors.append("Please upload your completed rubric.")
+    elif not is_valid_file(rubric, ["docx"]):
+        errors.append(f"{rubric.filename} isn't a valid Word document.")
 
     if errors:
         for error in errors:
@@ -486,10 +549,10 @@ def write_review(review_id):
     # Save it
     saved_path = None
     try:
-        if has_file:
-            stored_name = save_upload(annotated, app.config["UPLOAD_FOLDER"])
-            saved_path = os.path.join(app.config["UPLOAD_FOLDER"], stored_name)
-            review.annotated_file = stored_name
+        stored_name = save_upload(rubric, app.config["UPLOAD_FOLDER"])
+        saved_path = os.path.join(app.config["UPLOAD_FOLDER"], stored_name)
+        review.rubric_file = stored_name
+        review.rubric_approved = False
         review.recommendation = recommendation
         review.author_comments = author_comments
         review.editor_comments = editor_comments or None
@@ -522,16 +585,17 @@ def manage_submission(submission_id):
         abort(404)
 
     if request.method == "POST":
-        if submission.status in ["accepted", "rejected", "published"]:
+        action = request.form.get("action")
+        if action == "approve-rubric":
+            approve_rubric(submission)
+        elif submission.status in ["accepted", "rejected", "published", "withdrawn"]:
             flash("A decision has already been made on this submission.", "error")
+        elif action == "assign":
+            assign_reviewer(submission)
+        elif action == "decide":
+            record_decision(submission)
         else:
-            action = request.form.get("action")
-            if action == "assign":
-                assign_reviewer(submission)
-            elif action == "decide":
-                record_decision(submission)
-            else:
-                abort(400)
+            abort(400)
         return redirect(url_for("manage_submission", submission_id=submission.id))
 
     assigned_ids = [review.reviewer_id for review in submission.current_reviews]
@@ -590,10 +654,51 @@ def edit_issue(issue_id):
     selected_ids = [study.id for study in issue.submissions]
     return render_issue_form(issue, form, selected_ids)
 
+@app.route("/files/<int:file_id>")
+def download_file(file_id):
+    file = db.session.get(SubmissionFile, file_id)
+    if file is None or not can_view_version(g.user, file.version):
+        abort(404)
+    return send_from_directory(app.config["UPLOAD_FOLDER"], file.file_path, download_name=file.original_name)
 
-@app.route("/admin/users")
+@app.route("/reviews/<int:review_id>/rubric")
+def download_rubric(review_id):
+    review = db.session.get(Review, review_id)
+    if review is None or not review.rubric_file:
+        abort(404)
+    user = g.user
+    allowed = user is not None and (
+        user.role == "editor"
+        or review.reviewer_id == user.id
+        or (review.rubric_approved and review.submission.author_id == user.id)
+    )
+    if not allowed:
+        abort(404)
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"],
+        review.rubric_file,
+        download_name=f"review-rubric-{review.id}.docx",
+    )
+
+
+@app.route("/admin/users", methods=["GET", "POST"])
 @role_required("admin")
 def manage_users():
+    if request.method == "POST":
+        user = db.session.get(User, request.form.get("user_id", type=int) or 0)
+        if user is None:
+            abort(404)
+        action = request.form.get("action")
+        if action == "change-role":
+            change_role(user)
+        elif action == "delete":
+            delete_user(user)
+        elif action == "set-discipline":
+            set_discipline(user)
+        else:
+            abort(400)
+        return redirect(url_for("manage_users"))
+
     users = db.session.scalars(
         db.select(User).order_by(User.role, User.last_name)
     ).all()

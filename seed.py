@@ -5,7 +5,7 @@ from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
 from datetime import date, datetime, timezone
 
-from models import db, User, Issue, Submission, SubmissionVersion, SubmissionFile, Review
+from models import db, User, Issue, Submission, SubmissionVersion, SubmissionFile, Review, Advisor
 
 
 @click.command("seed")
@@ -14,17 +14,18 @@ def seed_command():
     """Delete all data and fill the database with test data."""
 
     # Delete existing rows, children before parents
-    for model in [SubmissionFile, SubmissionVersion, Review, Submission, Issue, User]:
+    for model in [SubmissionFile, SubmissionVersion, Review, Submission, Issue, Advisor, User]:
         db.session.query(model).delete()
 
     # Users (every test account has the password "password123")
     password = generate_password_hash("password123")
     jane = User(first_name="Jane", last_name="Doe", email="jane@example.com", password_hash=password, role="submitter")
     alex = User(first_name="Alex", last_name="Lee", email="alex@example.com", password_hash=password, role="submitter")
-    maria = User(first_name="Maria", last_name="Lopez", email="maria@example.com", password_hash=password, role="reviewer")
-    sam = User(first_name="Sam", last_name="Carter", email="sam@example.com", password_hash=password, role="reviewer")
+    maria = User(first_name="Maria", last_name="Lopez", email="maria@example.com", password_hash=password, role="reviewer", preferred_discipline="biology")
+    sam = User(first_name="Sam", last_name="Carter", email="sam@example.com", password_hash=password, role="reviewer", preferred_discipline="computer-science")
     erin = User(first_name="Erin", last_name="Walsh", email="erin@example.com", password_hash=password, role="editor")
     admin = User(first_name="Site", last_name="Admin", email="admin@example.com", password_hash=password, role="admin")
+
 
     # A published issue
     spring = Issue(volume=1, semester="spring", year=2026, status="published",
@@ -71,6 +72,14 @@ def seed_command():
     Review(submission=cache, reviewer=maria, assigner=erin, due_date=date(2026, 11, 15),
            status="not-started")
 
-    db.session.add_all([jane, alex, maria, sam, erin, admin, spring])
+
+    #Advisors
+    advisors = [
+    Advisor(first_name="Ruth", last_name="Adams", email="adams1r@example.edu", discipline="biology"),
+    Advisor(first_name="Ken", last_name="Wu", email="wu1k@example.edu", discipline="computer-science"),
+    Advisor(first_name="Omar", last_name="Haddad", email="hadda1o@example.edu", discipline="engineering"),
+    Advisor(first_name="Lena", last_name="Fischer", email="fisch1l@example.edu", discipline="chemistry"),
+    ]
+    db.session.add_all([jane, alex, maria, sam, erin, admin, spring, *advisors])
     db.session.commit()
     click.echo("Database seeded with test data.")
