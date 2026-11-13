@@ -1,0 +1,13 @@
+{% for study in issue.submissions | sort(attribute="title") %}
+  <article>
+    <h3><a href="{{ url_for('study_page', submission_id=study.id) }}">{{ study.title }}</a></h3>
+    <p class="authors">
+      By {{ study.author.first_name }} {{ study.author.last_name }}{% if study.coauthors %}, {{ study.coauthors }}{% endif %}
+      | {{ submission_types[study.submission_type].label }}
+      | {{ study.discipline | replace("-", " ") | title }}
+    </p>
+    {% if study.abstract %}
+      <p>{{ study.abstract }}</p>
+    {% endif %}
+  </article>
+{% endfor %}

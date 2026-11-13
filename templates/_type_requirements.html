@@ -1,0 +1,10 @@
+<dl class="details-list">
+  <dt>Format</dt>
+  <dd>{{ type_info.format_note }}</dd>
+  <dt>Required elements</dt>
+  <dd>{{ type_info.required_elements | join(", ") | capitalize }}</dd>
+  {% if type_info.max_pages %}
+    <dt>Max length</dt>
+    <dd>{{ type_info.max_pages }} pages, {{ type_info.max_length_note }}</dd>
+  {% endif %}
+</dl>

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Instructions for editors | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <h1>Instructions for editors</h1>
+      <p class="intro">Your job is to manage each work as it goes through the process, and to be the link between administrators, peer reviewers and submitters.</p>
+      <p>As an editor, you will:</p>
+      <ul>
+        <li>check the formatting of submissions</li>
+        <li>assign submissions to peer reviewers</li>
+        <li>check reviewers' recommendations</li>
+        <li>send decisions to submitters</li>
+        <li>send finished works to the advisory board</li>
+        <li>add finished works to the journal</li>
+        <li>answer reviewers' questions while they work on their assignments</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Checking formatting</h2>
+      <p>The journal accepts four submission types, listed in the <a href="{{ url_for('guidelines') }}">submission guidelines</a>. Every submission must follow APA 7th Edition formatting, and each type has its own requirements for length and file type.</p>
+      <p>If a submission doesn't meet the formatting guidelines, send the submitter a rejection explaining the issues with formatting. Otherwise, your next step is to assign it to a peer reviewer.</p>
+    </section>
+
+    <section>
+      <h2>Assigning the work</h2>
+      <p class="empty-state">This section is still being written.</p>
+    </section>
+
+    <section class="submit-prompt">
+      <h2>On the site</h2>
+      <ol class="steps">
+        <li><strong>All submissions</strong> lists every submission. Bold "None assigned" marks work waiting for a reviewer.</li>
+        <li>On a submission's page, check its files, then <strong>assign reviewers</strong>. Reviewers whose preferred discipline matches appear first.</li>
+        <li>When reviews come in, read them, and <strong>approve each rubric</strong> once you've checked it doesn't reveal the reviewer's name.</li>
+        <li><strong>Send your decision</strong> with a message to the author. After corrections, you can assign reviewers again for the next round.</li>
+        <li>For the final check, email an advisor from the <strong>Advisors</strong> list shown on the submission's page.</li>
+        <li>On <strong>Build an issue</strong>, choose accepted works, upload the issue PDF, and publish.</li>
+      </ol>
+      <p>Reviewers follow the <a href="{{ url_for('instructions', audience='reviewers') }}">instructions for reviewers</a>.</p>
+    </section>
+{% endblock %}

@@ -252,6 +252,16 @@ button.button {
   color: var(--maroon);
 }
 
+.steps {
+  padding-left: 1.4em;
+  margin-bottom: 16px;
+}
+
+.steps li {
+  margin-bottom: 10px;
+  line-height: 1.6;
+}
+
 /* ===== 9. Article list ===== */
 article {
   background-color: white;
@@ -510,6 +520,18 @@ th {
 .withdraw {
   border-top: 1px solid var(--light-blue);
   padding-top: 24px;
+}
+
+.poster-preview {
+  margin: 16px 0;
+}
+
+.poster-preview img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--light-blue);
+  background-color: white;
 }
 
 /* ===== 16. Manage submission ===== */

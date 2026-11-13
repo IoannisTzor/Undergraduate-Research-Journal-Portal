@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}{{ issue.label }} | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <p><a href="{{ url_for('past_issues') }}">Back to Past issues</a></p>
+      <h1>{{ issue.label }}</h1>
+      <p class="issue-label">Published {{ issue.published_at | date }} | {{ issue.submissions | length }} stud{% if issue.submissions | length == 1 %}y{% else %}ies{% endif %}</p>
+      {% if issue.editor_note %}
+        <p class="intro">{{ issue.editor_note }}</p>
+      {% endif %}
+      {% if issue.compiled_pdf %}
+        <p><a href="{{ url_for('download_issue_pdf', issue_id=issue.id) }}" class="button" target="_blank" rel="noopener">Download the full issue (PDF)<span class="visually-hidden"> (opens in a new tab)</span></a></p>
+      {% endif %}
+    </section>
+
+    <section>
+      <h2>Studies in this issue</h2>
+      {% include "_study_list.html" %}
+    </section>
+{% endblock %}

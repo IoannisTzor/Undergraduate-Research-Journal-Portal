@@ -11,7 +11,7 @@
         <p><strong>Format:</strong> {{ type_info.format_note }}</p>
         <p><strong>Required elements:</strong> {{ type_info.required_elements | join(", ") | capitalize }}</p>
         {% if type_info.max_pages %}
-          <p><strong>Max length:</strong> {{ type_info.max_pages }} pages, excluding references</p>
+          <p><strong>Max length:</strong> {{ type_info.max_pages }} pages, {{ type_info.max_length_note }}</p>
         {% endif %}
       </div>
 

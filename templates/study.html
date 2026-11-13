@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% set type_info = submission_types[study.submission_type] %}
+{% set latest = study.versions[-1] %}
+
+{% block title %}{{ study.title }} | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <p><a href="{{ url_for('issue_page', issue_id=study.issue.id) }}">Back to {{ study.issue.label }}</a></p>
+      <p class="issue-meta">{{ type_info.label }} | {{ study.discipline | replace("-", " ") | title }}</p>
+      <h1>{{ study.title }}</h1>
+      <p class="authors">
+        By {{ study.author.first_name }} {{ study.author.last_name }}{% if study.coauthors %}, {{ study.coauthors }}{% endif %}
+      </p>
+      <p class="issue-meta">
+        Published in <a href="{{ url_for('issue_page', issue_id=study.issue.id) }}">{{ study.issue.label }}</a>
+        | Faculty mentor: {{ study.mentor }}
+      </p>
+    </section>
+
+    {% if study.abstract %}
+      <section>
+        <h2>{{ type_info.abstract_label }}</h2>
+        <p>{{ study.abstract }}</p>
+      </section>
+    {% endif %}
+
+    <section>
+      <h2>Read the {{ type_info.label | lower }}</h2>
+      {% for file in latest.files %}
+        {% if file.file_path.lower().endswith(".png") %}
+          <figure class="poster-preview">
+            <img src="{{ url_for('download_file', file_id=file.id) }}" alt="{{ study.title }}{% if latest.files | length > 1 %}, image {{ loop.index }}{% endif %}">
+          </figure>
+          <p><a href="{{ url_for('download_file', file_id=file.id) }}" target="_blank" rel="noopener">Open full size<span class="visually-hidden">: {{ file.original_name }}</span><span class="visually-hidden"> (opens in a new tab)</span></a></p>
+        {% else %}
+          <p><a href="{{ url_for('download_file', file_id=file.id) }}" class="button" target="_blank" rel="noopener">Open {{ file.original_name }}<span class="visually-hidden"> (opens in a new tab)</span></a></p>
+        {% endif %}
+      {% endfor %}
+    </section>
+
+    <section>
+      <h2>How to cite this study</h2>
+      <p class="citation">
+        {{ study.author.last_name }}, {{ study.author.first_name[0] }}.{% if study.coauthors %}, {{ study.coauthors }}{% endif %}
+        ({{ study.issue.year }}). {{ study.title }}. <em>STEM Student Journal</em>, {{ study.issue.label }}.
+      </p>
+    </section>
+{% endblock %}

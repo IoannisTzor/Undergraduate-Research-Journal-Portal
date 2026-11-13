@@ -1,17 +1,40 @@
+# ==========================================================================
+# STEM Student Journal: Flask app
+#  1. Imports
+#  2. App setup
+#  3. Constants
+#  4. Request setup: current user, access control, template helpers
+#  5. Helpers: users and advisors
+#  6. Helpers: submissions, files and reviews
+#  7. Helpers: issues
+#  8. Routes: public pages
+#  9. Routes: submitters
+# 10. Routes: reviewers
+# 11. Routes: editors
+# 12. Routes: admin
+# 13. Routes: file downloads
+# 14. Routes: development only (remove with real login)
+# 15. Error pages
+# ==========================================================================
+
+
+# ===== 1. Imports =====
 import os
+from datetime import date, datetime, timezone
 from functools import wraps
 
-from flask import Flask, render_template, session, redirect, url_for, request, abort, g, flash, send_from_directory
 from dotenv import load_dotenv
+from flask import Flask, render_template, session, redirect, url_for, request, abort, g, flash, send_from_directory
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
-from sqlalchemy import text
-from seed import seed_command
-from datetime import date, datetime, timezone
+
 from models import db, User, Submission, SubmissionVersion, SubmissionFile, Review, Issue, Advisor
+from seed import seed_command
 from submission_types import SUBMISSION_TYPES, DISCIPLINES, RECOMMENDATIONS
 from uploads import file_extension, is_valid_file, save_upload
 
+
+# ===== 2. App setup =====
 load_dotenv()
 
 app = Flask(__name__)
@@ -27,14 +50,61 @@ migrate = Migrate(app, db)
 csrf = CSRFProtect(app)
 app.cli.add_command(seed_command)
 
+
+# ===== 3. Constants =====
+ROLES = ["guest", "submitter", "reviewer", "editor", "admin"]
+ASSIGNABLE_ROLES = [role for role in ROLES if role != "guest"]
+
+DECISIONS = ["accepted", "revisions-requested", "rejected"]
+WITHDRAWABLE = ["submitted", "under-review", "revisions-requested", "revised", "accepted"]
+
+
+# ===== 4. Request setup: current user, access control, template helpers =====
 @app.before_request
 def load_current_user():
     user_id = session.get("user_id")
     g.user = db.session.get(User, user_id) if user_id else None
 
-ROLES = ["guest", "submitter", "reviewer", "editor", "admin"]
-ASSIGNABLE_ROLES = [role for role in ROLES if role != "guest"]
 
+def role_required(role):
+    def decorator(view):
+        @wraps(view)
+        def wrapped(*args, **kwargs):
+            if g.user is None or g.user.role != role:
+                abort(403)
+            return view(*args, **kwargs)
+        return wrapped
+    return decorator
+
+
+@app.context_processor
+def inject_role():
+    return {
+        "current_user": g.user,
+        "current_role": g.user.role if g.user else "guest",
+        "roles": ROLES,
+        "dev_users": db.session.scalars(db.select(User).order_by(User.role, User.last_name)).all(),
+        "submission_types": SUBMISSION_TYPES,
+        "disciplines": DISCIPLINES,
+        "recommendations": RECOMMENDATIONS,
+    }
+
+
+@app.template_filter("date")
+def format_date(value):
+    if value is None:
+        return ""
+    return f"{value.strftime('%B')} {value.day}, {value.year}"
+
+
+def parse_date(text):
+    try:
+        return date.fromisoformat(text)
+    except ValueError:
+        return None
+
+
+# ===== 5. Helpers: users and advisors =====
 def change_role(user):
     new_role = request.form.get("role", "")
     if new_role not in ASSIGNABLE_ROLES:
@@ -86,6 +156,7 @@ def set_discipline(user):
     else:
         flash(f"{user.first_name} {user.last_name} no longer has a preferred discipline.", "success")
 
+
 def render_advisors(form):
     advisors = db.session.scalars(
         db.select(Advisor).order_by(Advisor.discipline, Advisor.last_name)
@@ -125,24 +196,107 @@ def add_advisor():
     return redirect(url_for("manage_advisors"))
 
 
-def role_required(role):
-    def decorator(view):
-        @wraps(view)
-        def wrapped(*args, **kwargs):
-            if g.user is None or g.user.role != role:
-                abort(403)
-            return view(*args, **kwargs)
-        return wrapped
-    return decorator
+# ===== 6. Helpers: submissions, files and reviews =====
+def file_errors(files, type_info):
+    errors = []
+    if not files:
+        errors.append("Please choose a file to upload.")
+    elif len(files) > 1 and not type_info["multiple_files"]:
+        errors.append("Please upload a single file.")
+    for file in files:
+        if not is_valid_file(file, type_info["file_formats"]):
+            formats = " or ".join(type_info["file_formats"]).upper()
+            errors.append(f"{file.filename} isn't a valid {formats} file.")
+    return errors
 
-def parse_date(text):
+
+def can_view_version(user, version):
+    submission = version.submission
+    if submission.status == "published" and version == submission.versions[-1]:
+        return True
+    if user is None:
+        return False
+    if user.role == "editor":
+        return True
+    if user.role == "submitter" and submission.author_id == user.id:
+        return True
+    if user.role == "reviewer" and any(review.reviewer_id == user.id for review in submission.reviews):
+        return True
+    return False
+
+
+def render_submission_details(submission, form):
+    reviews = [review for review in submission.reviews if review.status == "submitted"]
+    can_withdraw = submission.status in WITHDRAWABLE and submission.issue_id is None
+    return render_template(
+        "submission_details.html",
+        submission=submission,
+        reviews=reviews,
+        form=form,
+        can_withdraw=can_withdraw,
+    )
+
+
+def upload_corrections(submission):
+    if submission.status != "revisions-requested":
+        flash("You can only upload corrections when the editor has requested revisions.", "error")
+        return redirect(url_for("submission_details", submission_id=submission.id))
+
+    type_info = SUBMISSION_TYPES[submission.submission_type]
+    response = request.form.get("response", "").strip()
+    files = [file for file in request.files.getlist("revised_files") if file.filename]
+
+    errors = []
+    if not response:
+        errors.append("Please explain what you changed.")
+    errors += file_errors(files, type_info)
+
+    if errors:
+        for error in errors:
+            flash(error, "error")
+        return render_submission_details(submission, request.form)
+
+    next_number = submission.current_round + 1
+    version = SubmissionVersion(submission=submission, version_number=next_number, response_note=response)
+
+    saved_paths = []
     try:
-        return date.fromisoformat(text)
-    except ValueError:
-        return None
+        for file in files:
+            stored_name = save_upload(file, app.config["UPLOAD_FOLDER"])
+            saved_paths.append(os.path.join(app.config["UPLOAD_FOLDER"], stored_name))
+            SubmissionFile(version=version, file_path=stored_name, original_name=file.filename[:255])
+        db.session.add(version)
+        submission.status = "revised"
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        for path in saved_paths:
+            if os.path.exists(path):
+                os.remove(path)
+        flash("Something went wrong while uploading your corrections. Please try again.", "error")
+        return render_submission_details(submission, request.form)
 
-DECISIONS = ["accepted", "revisions-requested", "rejected"]
-WITHDRAWABLE = ["submitted", "under-review", "revisions-requested", "revised", "accepted"]
+    flash("Your corrections were uploaded. The editor will take it from here.", "success")
+    return redirect(url_for("submission_details", submission_id=submission.id))
+
+
+def withdraw_submission(submission):
+    if submission.status not in WITHDRAWABLE:
+        flash("This submission can no longer be withdrawn.", "error")
+        return redirect(url_for("submission_details", submission_id=submission.id))
+    if submission.issue_id is not None:
+        flash("This study is already part of an issue being prepared. Please contact the editor to withdraw it.", "error")
+        return redirect(url_for("submission_details", submission_id=submission.id))
+
+    submission.status = "withdrawn"
+    for review in submission.reviews:
+        if review.status == "not-started":
+            review.status = "cancelled"
+    db.session.commit()
+
+    flash("Your submission was withdrawn.", "success")
+    return redirect(url_for("submission_details", submission_id=submission.id))
+
 
 def assign_reviewer(submission):
     reviewer_id = request.form.get("reviewer_id", type=int)
@@ -197,6 +351,7 @@ def record_decision(submission):
     db.session.commit()
     flash("Your decision was sent to the author.", "success")
 
+
 def approve_rubric(submission):
     review = db.session.get(Review, request.form.get("review_id", type=int) or 0)
     if review is None or review.submission_id != submission.id or not review.rubric_file:
@@ -205,88 +360,8 @@ def approve_rubric(submission):
     db.session.commit()
     flash(f"The rubric from {review.reviewer.first_name} {review.reviewer.last_name} is now visible to the author.", "success")
 
-def file_errors(files, type_info):
-    errors = []
-    if not files:
-        errors.append("Please choose a file to upload.")
-    elif len(files) > 1 and not type_info["multiple_files"]:
-        errors.append("Please upload a single file.")
-    for file in files:
-        if not is_valid_file(file, type_info["file_formats"]):
-            formats = " or ".join(type_info["file_formats"]).upper()
-            errors.append(f"{file.filename} isn't a valid {formats} file.")
-    return errors
 
-def render_submission_details(submission, form):
-    reviews = [review for review in submission.reviews if review.status == "submitted"]
-    can_withdraw = submission.status in WITHDRAWABLE and submission.issue_id is None
-    return render_template(
-        "submission_details.html",
-        submission=submission,
-        reviews=reviews,
-        form=form,
-        can_withdraw=can_withdraw,
-    )
-
-def upload_corrections(submission):
-    if submission.status != "revisions-requested":
-        flash("You can only upload corrections when the editor has requested revisions.", "error")
-        return redirect(url_for("submission_details", submission_id=submission.id))
-
-    type_info = SUBMISSION_TYPES[submission.submission_type]
-    response = request.form.get("response", "").strip()
-    files = [file for file in request.files.getlist("revised_files") if file.filename]
-
-    errors = []
-    if not response:
-        errors.append("Please explain what you changed.")
-    errors += file_errors(files, type_info)
-
-    if errors:
-        for error in errors:
-            flash(error, "error")
-        return render_submission_details(submission, request.form)
-
-    next_number = submission.current_round + 1
-    version = SubmissionVersion(submission=submission, version_number=next_number, response_note=response)
-
-    saved_paths = []
-    try:
-        for file in files:
-            stored_name = save_upload(file, app.config["UPLOAD_FOLDER"])
-            saved_paths.append(os.path.join(app.config["UPLOAD_FOLDER"], stored_name))
-            SubmissionFile(version=version, file_path=stored_name, original_name=file.filename[:255])
-        db.session.add(version)
-        submission.status = "revised"
-        db.session.commit()
-    except Exception:
-        db.session.rollback()
-        for path in saved_paths:
-            if os.path.exists(path):
-                os.remove(path)
-        flash("Something went wrong while uploading your corrections. Please try again.", "error")
-        return render_submission_details(submission, request.form)
-
-    flash("Your corrections were uploaded. The editor will take it from here.", "success")
-    return redirect(url_for("submission_details", submission_id=submission.id))
-
-def withdraw_submission(submission):
-    if submission.status not in WITHDRAWABLE:
-        flash("This submission can no longer be withdrawn.", "error")
-        return redirect(url_for("submission_details", submission_id=submission.id))
-    if submission.issue_id is not None:
-        flash("This study is already part of an issue being prepared. Please contact the editor to withdraw it.", "error")
-        return redirect(url_for("submission_details", submission_id=submission.id))
-
-    submission.status = "withdrawn"
-    for review in submission.reviews:
-        if review.status == "not-started":
-            review.status = "cancelled"
-    db.session.commit()
-
-    flash("Your submission was withdrawn.", "success")
-    return redirect(url_for("submission_details", submission_id=submission.id))
-
+# ===== 7. Helpers: issues =====
 def render_issue_form(issue, form, selected_ids):
     if issue:
         available = db.or_(Submission.issue_id.is_(None), Submission.issue_id == issue.id)
@@ -312,12 +387,21 @@ def render_issue_form(issue, form, selected_ids):
     )
 
 
-def save_issue(issue, action):
+def publish_issue(issue):
+    issue.status = "published"
+    issue.published_at = datetime.now(timezone.utc)
+    for study in issue.submissions:
+        study.status = "published"
+
+
+def save_issue(existing, action):
     volume = request.form.get("volume", type=int)
     semester = request.form.get("semester", "")
     year = request.form.get("year", type=int)
     editor_note = request.form.get("editor_note", "").strip()
     study_ids = request.form.getlist("study_ids", type=int)
+    pdf = request.files.get("compiled_pdf")
+    has_pdf = pdf is not None and pdf.filename != ""
 
     errors = []
     if volume is None or volume < 1:
@@ -328,31 +412,34 @@ def save_issue(issue, action):
         errors.append("Please enter a valid year.")
     if not study_ids:
         errors.append("Please choose at least one study.")
+    if has_pdf and not is_valid_file(pdf, ["pdf"]):
+        errors.append(f"{pdf.filename} isn't a valid PDF file.")
+    if action == "publish" and not has_pdf and not (existing and existing.compiled_pdf):
+        errors.append("Please upload the issue PDF before publishing.")
 
     studies = []
     if study_ids:
         studies = db.session.scalars(db.select(Submission).where(Submission.id.in_(study_ids))).all()
         for study in studies:
-            in_another_issue = study.issue_id is not None and (issue is None or study.issue_id != issue.id)
+            in_another_issue = study.issue_id is not None and (existing is None or study.issue_id != existing.id)
             if study.status != "accepted" or in_another_issue:
                 errors.append(f"{study.title} can no longer be added. Please check the list again.")
         if len(studies) != len(set(study_ids)):
             errors.append("One or more of the chosen studies no longer exists.")
 
     if not errors:
-        existing = db.session.scalars(
+        duplicate = db.session.scalars(
             db.select(Issue).where(Issue.volume == volume, Issue.semester == semester, Issue.year == year)
         ).first()
-        if existing and (issue is None or existing.id != issue.id):
-            errors.append(f"{existing.label} already exists.")
+        if duplicate and (existing is None or duplicate.id != existing.id):
+            errors.append(f"{duplicate.label} already exists.")
 
     if errors:
         for error in errors:
             flash(error, "error")
-        return render_issue_form(issue, request.form, study_ids)
+        return render_issue_form(existing, request.form, study_ids)
 
-    if issue is None:
-        issue = Issue(status="draft")
+    issue = existing or Issue(status="draft")
     issue.volume = volume
     issue.semester = semester
     issue.year = year
@@ -365,9 +452,27 @@ def save_issue(issue, action):
     for study in studies:
         study.issue = issue
 
-    if action == "publish":
-        publish_issue(issue)
-    db.session.commit()
+    old_pdf = issue.compiled_pdf if has_pdf else None
+    saved_path = None
+    try:
+        if has_pdf:
+            stored_name = save_upload(pdf, app.config["UPLOAD_FOLDER"])
+            saved_path = os.path.join(app.config["UPLOAD_FOLDER"], stored_name)
+            issue.compiled_pdf = stored_name
+        if action == "publish":
+            publish_issue(issue)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        if saved_path and os.path.exists(saved_path):
+            os.remove(saved_path)
+        flash("Something went wrong while saving the issue. Please try again.", "error")
+        return render_issue_form(existing, request.form, study_ids)
+
+    if old_pdf:
+        old_path = os.path.join(app.config["UPLOAD_FOLDER"], old_pdf)
+        if os.path.exists(old_path):
+            os.remove(old_path)
 
     if action == "publish":
         flash(f"{issue.label} is published and now on the homepage.", "success")
@@ -386,20 +491,24 @@ def delete_draft(issue):
     return redirect(url_for("build_issue"))
 
 
-def publish_issue(issue):
-    issue.status = "published"
-    issue.published_at = datetime.now(timezone.utc)
-    for study in issue.submissions:
-        study.status = "published"
-
 def publish_draft():
     issue = db.session.get(Issue, request.form.get("issue_id", type=int) or 0)
     if issue is None or issue.status != "draft":
         abort(404)
+    if not issue.compiled_pdf:
+        flash(f"Upload the PDF for {issue.label} before publishing. Use Edit to add it.", "error")
+        return redirect(url_for("build_issue"))
     publish_issue(issue)
     db.session.commit()
     flash(f"{issue.label} is published and now on the homepage.", "success")
     return redirect(url_for("home"))
+
+
+# ===== 8. Routes: public pages =====
+INSTRUCTION_ACCESS = {
+    "reviewers": ["reviewer", "editor"],
+    "editors": ["editor"],
+}
 
 @app.route("/")
 def home():
@@ -410,9 +519,27 @@ def home():
     ).first()
     return render_template("index.html", current_issue=current_issue)
 
+
+
+@app.route("/instructions/<audience>")
+def instructions(audience):
+    allowed_roles = INSTRUCTION_ACCESS.get(audience)
+    if allowed_roles is None:
+        abort(404)
+    if g.user is None or g.user.role not in allowed_roles:
+        abort(403)
+    return render_template(f"instructions_{audience}.html")
+
+    
 @app.route("/about")
 def about():
     return render_template("about.html")
+
+
+@app.route("/guidelines")
+def guidelines():
+    return render_template("guidelines.html", submission_types=SUBMISSION_TYPES)
+
 
 @app.route("/past-issues")
 def past_issues():
@@ -423,48 +550,34 @@ def past_issues():
     ).all()
     return render_template("past_issues.html", issues=published[1:])
 
+
+@app.route("/issues/<int:issue_id>")
+def issue_page(issue_id):
+    issue = db.session.get(Issue, issue_id)
+    if issue is None or issue.status != "published":
+        abort(404)
+    return render_template("issue.html", issue=issue)
+
+
+@app.route("/studies/<int:submission_id>")
+def study_page(submission_id):
+    study = db.session.get(Submission, submission_id)
+    if study is None or study.status != "published" or study.issue is None or study.issue.status != "published":
+        abort(404)
+    return render_template("study.html", study=study)
+
+
 @app.route("/login")
 def login():
     return render_template("login.html")
+
 
 @app.route("/signup")
 def signup():
     return render_template("signup.html")
 
-@app.route("/dev/login/<int:user_id>")
-def dev_login(user_id):
-    user = db.session.get(User, user_id)
-    if user is None:
-        abort(404)
-    session["user_id"] = user.id
-    flash(f"Now viewing as {user.first_name} {user.last_name}.", "success")
-    return redirect(request.referrer or url_for("home"))
 
-
-@app.route("/dev/logout")
-def dev_logout():
-    session.pop("user_id", None)
-    return redirect(url_for("home"))
-
-
-@app.context_processor
-def inject_role():
-    return {
-        "current_user": g.user,
-        "current_role": g.user.role if g.user else "guest",
-        "roles": ROLES,
-        "dev_users": db.session.scalars(db.select(User).order_by(User.role, User.last_name)).all(),
-        "submission_types": SUBMISSION_TYPES,
-        "disciplines": DISCIPLINES,
-        "recommendations": RECOMMENDATIONS,
-    }
-
-@app.template_filter("date")
-def format_date(value):
-    if value is None:
-        return ""
-    return f"{value.strftime('%B')} {value.day}, {value.year}"
-
+# ===== 9. Routes: submitters =====
 @app.route("/submit/<submission_type>", methods=["GET", "POST"])
 @role_required("submitter")
 def submit_study(submission_type):
@@ -535,6 +648,7 @@ def submit_study(submission_type):
     flash("Your study was submitted! You can follow its progress here.", "success")
     return redirect(url_for("submission_details", submission_id=submission.id))
 
+
 @app.route("/my-submissions")
 @role_required("submitter")
 def my_submissions():
@@ -544,6 +658,7 @@ def my_submissions():
         .order_by(Submission.submitted_at.desc())
     ).all()
     return render_template("my_submissions.html", submissions=submissions)
+
 
 @app.route("/my-submissions/<int:submission_id>", methods=["GET", "POST"])
 @role_required("submitter")
@@ -562,10 +677,8 @@ def submission_details(submission_id):
 
     return render_submission_details(submission, form={})
 
-@app.errorhandler(403)
-def forbidden(error):
-    return render_template("403.html"), 403
 
+# ===== 10. Routes: reviewers =====
 @app.route("/assignments")
 @role_required("reviewer")
 def my_assignments():
@@ -575,6 +688,7 @@ def my_assignments():
         .order_by(Review.due_date)
     ).all()
     return render_template("my_assignments.html", reviews=reviews)
+
 
 @app.route("/assignments/<int:review_id>", methods=["GET", "POST"])
 @role_required("reviewer")
@@ -640,6 +754,8 @@ def write_review(review_id):
     flash("Thank you! Your review was submitted.", "success")
     return redirect(url_for("my_assignments"))
 
+
+# ===== 11. Routes: editors =====
 @app.route("/editor/submissions")
 @role_required("editor")
 def all_submissions():
@@ -647,6 +763,7 @@ def all_submissions():
         db.select(Submission).order_by(Submission.submitted_at.desc())
     ).all()
     return render_template("all_submissions.html", submissions=submissions)
+
 
 @app.route("/editor/submissions/<int:submission_id>", methods=["GET", "POST"])
 @role_required("editor")
@@ -696,9 +813,6 @@ def manage_submission(submission_id):
         advisors=advisors,
     )
 
-@app.errorhandler(404)
-def page_not_found(error):
-    return render_template("404.html"), 404
 
 @app.route("/editor/build-issue", methods=["GET", "POST"])
 @role_required("editor")
@@ -737,33 +851,28 @@ def edit_issue(issue_id):
     selected_ids = [study.id for study in issue.submissions]
     return render_issue_form(issue, form, selected_ids)
 
-@app.route("/files/<int:file_id>")
-def download_file(file_id):
-    file = db.session.get(SubmissionFile, file_id)
-    if file is None or not can_view_version(g.user, file.version):
-        abort(404)
-    return send_from_directory(app.config["UPLOAD_FOLDER"], file.file_path, download_name=file.original_name)
 
-@app.route("/reviews/<int:review_id>/rubric")
-def download_rubric(review_id):
-    review = db.session.get(Review, review_id)
-    if review is None or not review.rubric_file:
-        abort(404)
-    user = g.user
-    allowed = user is not None and (
-        user.role == "editor"
-        or review.reviewer_id == user.id
-        or (review.rubric_approved and review.submission.author_id == user.id)
-    )
-    if not allowed:
-        abort(404)
-    return send_from_directory(
-        app.config["UPLOAD_FOLDER"],
-        review.rubric_file,
-        download_name=f"review-rubric-{review.id}.docx",
-    )
+@app.route("/editor/advisors", methods=["GET", "POST"])
+@role_required("editor")
+def manage_advisors():
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "add":
+            return add_advisor()
+        if action == "delete":
+            advisor = db.session.get(Advisor, request.form.get("advisor_id", type=int) or 0)
+            if advisor is None:
+                abort(404)
+            name = f"{advisor.first_name} {advisor.last_name}"
+            db.session.delete(advisor)
+            db.session.commit()
+            flash(f"{name} was removed from the advisors list.", "success")
+            return redirect(url_for("manage_advisors"))
+        abort(400)
+    return render_advisors(form={})
 
 
+# ===== 12. Routes: admin =====
 @app.route("/admin/users", methods=["GET", "POST"])
 @role_required("admin")
 def manage_users():
@@ -787,25 +896,73 @@ def manage_users():
     ).all()
     return render_template("manage_users.html", users=users)
 
-@app.route("/editor/advisors", methods=["GET", "POST"])
-@role_required("editor")
-def manage_advisors():
-    if request.method == "POST":
-        action = request.form.get("action")
-        if action == "add":
-            return add_advisor()
-        if action == "delete":
-            advisor = db.session.get(Advisor, request.form.get("advisor_id", type=int) or 0)
-            if advisor is None:
-                abort(404)
-            name = f"{advisor.first_name} {advisor.last_name}"
-            db.session.delete(advisor)
-            db.session.commit()
-            flash(f"{name} was removed from the advisors list.", "success")
-            return redirect(url_for("manage_advisors"))
-        abort(400)
-    return render_advisors(form={})
 
-@app.route("/guidelines")
-def guidelines():
-    return render_template("guidelines.html", submission_types=SUBMISSION_TYPES)
+# ===== 13. Routes: file downloads =====
+@app.route("/files/<int:file_id>")
+def download_file(file_id):
+    file = db.session.get(SubmissionFile, file_id)
+    if file is None or not can_view_version(g.user, file.version):
+        abort(404)
+    return send_from_directory(app.config["UPLOAD_FOLDER"], file.file_path, download_name=file.original_name)
+
+
+@app.route("/reviews/<int:review_id>/rubric")
+def download_rubric(review_id):
+    review = db.session.get(Review, review_id)
+    if review is None or not review.rubric_file:
+        abort(404)
+    user = g.user
+    allowed = user is not None and (
+        user.role == "editor"
+        or review.reviewer_id == user.id
+        or (review.rubric_approved and review.submission.author_id == user.id)
+    )
+    if not allowed:
+        abort(404)
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"],
+        review.rubric_file,
+        download_name=f"review-rubric-{review.id}.docx",
+    )
+
+
+@app.route("/issues/<int:issue_id>/pdf")
+def download_issue_pdf(issue_id):
+    issue = db.session.get(Issue, issue_id)
+    if issue is None or not issue.compiled_pdf:
+        abort(404)
+    if issue.status != "published" and (g.user is None or g.user.role != "editor"):
+        abort(404)
+    return send_from_directory(
+        app.config["UPLOAD_FOLDER"],
+        issue.compiled_pdf,
+        download_name=f"stem-student-journal-volume-{issue.volume}-{issue.semester}-{issue.year}.pdf",
+    )
+
+
+# ===== 14. Routes: development only (remove with real login) =====
+@app.route("/dev/login/<int:user_id>")
+def dev_login(user_id):
+    user = db.session.get(User, user_id)
+    if user is None:
+        abort(404)
+    session["user_id"] = user.id
+    flash(f"Now viewing as {user.first_name} {user.last_name}.", "success")
+    return redirect(request.referrer or url_for("home"))
+
+
+@app.route("/dev/logout")
+def dev_logout():
+    session.pop("user_id", None)
+    return redirect(url_for("home"))
+
+
+# ===== 15. Error pages =====
+@app.errorhandler(403)
+def forbidden(error):
+    return render_template("403.html"), 403
+
+
+@app.errorhandler(404)
+def page_not_found(error):
+    return render_template("404.html"), 404

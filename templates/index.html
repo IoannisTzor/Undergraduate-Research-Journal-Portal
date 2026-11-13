@@ -4,29 +4,23 @@
     <section>
       <h1>Research by students, for anyone curious.</h1>
       <p class="intro">The STEM Student Journal publishes undergraduate research in science, technology, engineering and math.</p>
-      <a href="#" class="button">Submit your research</a>
+      <a href="{{ url_for('guidelines') }}" class="button">Submit your research</a>
     </section>
 
     <section>
       {% if current_issue %}
         <h2>Current issue</h2>
-        <p class="issue-label">{{ current_issue.label }}</p>
+        <p class="issue-label"><a href="{{ url_for('issue_page', issue_id=current_issue.id) }}">{{ current_issue.label }}</a></p>
+        {% if current_issue.compiled_pdf %}
+          <p><a href="{{ url_for('download_issue_pdf', issue_id=current_issue.id) }}" target="_blank" rel="noopener">Download the full issue (PDF)<span class="visually-hidden"> (opens in a new tab)</span></a></p>
+        {% endif %}
         {% if current_issue.editor_note %}
           <p class="intro">{{ current_issue.editor_note }}</p>
         {% endif %}
 
-        {% for study in current_issue.submissions %}
-          <article>
-            <h3><a href="#">{{ study.title }}</a></h3>
-            <p class="authors">
-              By {{ study.author.first_name }} {{ study.author.last_name }}{% if study.coauthors %}, {{ study.coauthors }}{% endif %}
-              | {{ submission_types[study.submission_type].label }}
-            </p>
-            {% if study.abstract %}
-              <p>{{ study.abstract }}</p>
-            {% endif %}
-          </article>
-        {% endfor %}
+        {% with issue=current_issue %}
+          {% include "_study_list.html" %}
+        {% endwith %}
       {% else %}
         <p class="empty-state">The first issue is on its way. Check back soon!</p>
       {% endif %}

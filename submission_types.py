@@ -5,12 +5,16 @@ SUBMISSION_TYPES = {
         "format_note": "APA 7th Edition | PDF",
         "file_formats": ["pdf"],
         "multiple_files": False,
-        "required_elements": ["title page", "abstract", "introduction", "methodology", "results", "analysis", "conclusion", "references"],
+        "required_elements": [
+            "title page", "abstract", "introduction", "literature review", "method", "results",
+            "discussion", "conclusion", "acknowledgements", "references",
+        ],
         "max_pages": 20,
+        "max_length_note": "excluding references and appendices",
         "abstract_label": "Abstract",
         "abstract_required": True,
-        "submit_label" : "Submit a Reasearch Paper",
-        "rubric_file": "rubrics/research-paper.docx"
+        "submit_label": "Submit a research paper",
+        "rubric_file": "rubrics/research-paper.docx",
     },
     "review-paper": {
         "label": "Review paper",
@@ -18,12 +22,15 @@ SUBMISSION_TYPES = {
         "format_note": "APA 7th Edition | PDF",
         "file_formats": ["pdf"],
         "multiple_files": False,
-        "required_elements": ["title page", "abstract", "analysis", "conclusion", "references"],
+        "required_elements": [
+            "title page", "abstract", "introduction", "discussion", "conclusion", "acknowledgements", "references",
+        ],
         "max_pages": 10,
+        "max_length_note": "excluding references",
         "abstract_label": "Abstract",
         "abstract_required": True,
-        "submit_label" : "Submit a Review",
-        "rubric_file": "rubrics/review-paper.docx"
+        "submit_label": "Submit a review paper",
+        "rubric_file": "rubrics/review-paper.docx",
     },
     "poster": {
         "label": "Poster",
@@ -31,28 +38,32 @@ SUBMISSION_TYPES = {
         "format_note": "48 x 36 inches or 36 x 48 inches | PNG",
         "file_formats": ["png"],
         "multiple_files": False,
-        "required_elements": ["research question", "background", "method", "results", "conclusion", "acknowledgements", "references"],
+        "required_elements": [
+            "research question", "background", "method", "results", "conclusion", "acknowledgements", "references",
+        ],
         "max_pages": None,
+        "max_length_note": "",
         "abstract_label": "Short description",
         "abstract_required": False,
-        "submit_label" : "Submit a Poster",
-        "rubric_file": "rubrics/poster.docx"
+        "submit_label": "Submit a poster",
+        "rubric_file": "rubrics/poster.docx",
     },
     "other": {
-        "label": "Other",
-        "description": "If your submission does not fall into the categories above, but you still feel it would be a good fit for our journal, you are welcome to submit. This may include creative projects, interviews, visualization of findings, or other alternative ways of sharing STEM work.",
+        "label": "Non-traditional",
+        "description": "If your submission does not fall into the categories above, but you still feel it would be a good fit for the journal, you are welcome to submit. This may include creative projects, interviews, visualizations of findings, or other alternative ways of sharing STEM work.",
         "format_note": "APA 7th Edition, when applicable (such as references) | PDF or PNG(s)",
         "file_formats": ["pdf", "png"],
         "multiple_files": True,
-        "required_elements": ["summary or abstract"],
+        "required_elements": ["summary or abstract", "acknowledgements", "references"],
         "max_pages": 15,
+        "max_length_note": "excluding references and appendices",
         "abstract_label": "Summary or abstract",
         "abstract_required": True,
-        "submit_label" : "Submit Another Kind of Work",
-        "rubric_file": "rubrics/other.docx"
+        "submit_label": "Submit non-traditional work",
+        "rubric_file": "rubrics/other.docx",
     },
-    
 }
+
 DISCIPLINES = {
     "biology": "Biology",
     "chemistry": "Chemistry",

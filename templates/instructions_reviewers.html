@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Instructions for reviewers | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <h1>Instructions for reviewers</h1>
+      <p class="intro">Your reviews decide which works make it into this semester's edition of the journal, and help every author improve, whatever the decision.</p>
+      <p>If you have questions about your review, or want advice, reach out to one of our editors. This is likely a new experience, and we want it to go as smoothly as possible.</p>
+    </section>
+
+    <section>
+      <h2>Your review at a glance</h2>
+      <p>You'll read each submission <strong>three times</strong>:</p>
+      <ol class="steps">
+        <li><strong>First read: summary.</strong> Read the whole work to understand its topic and conclusions, then write a summary of at least 100 words.</li>
+        <li><strong>Second read: rubric.</strong> Read again with the rubric open, scoring each element from 1 to 3.</li>
+        <li><strong>Third read: check.</strong> Confirm that anything you scored as missing is truly absent, and that no element was skipped.</li>
+      </ol>
+      <p>Then write your feedback, and make your recommendation.</p>
+    </section>
+
+    <section>
+      <h2>What every submission must do</h2>
+      <ul>
+        <li>Relate to STEM (science, technology, engineering or math).</li>
+        <li>Meet the journal's formatting guidelines.</li>
+        <li>Add to existing knowledge, or highlight gaps in it.</li>
+      </ul>
+      <p>A work may be rejected if it doesn't meet the guidelines, isn't of high quality, or is factually incorrect. If a work has promise but needs more improvement than is possible in the current publication cycle, recommend rejection: students can always resubmit next semester.</p>
+    </section>
+
+    <section>
+      <h2>Types of submissions</h2>
+      <p>Editors check formatting and required elements before a work is assigned to you, but if you notice any discrepancies, include them as minor edits.</p>
+      {% for type_key, type_info in submission_types.items() %}
+        <article class="type-card">
+          <h3>{{ type_info.label }}</h3>
+          <p>{{ type_info.description }}</p>
+          {% include "_type_requirements.html" %}
+        </article>
+      {% endfor %}
+    </section>
+
+    <section>
+      <h2>Summary of the work</h2>
+      <p>Before focusing on strengths, weaknesses or grammar, read the work through to get a sense of its topic. Try to work out what the author is arguing or teaching you; if the author has done their job well, this should be clear from the opening paragraphs.</p>
+      <p>Then write a summary of at least 100 words, as a paragraph, a list, or any format that works for you, covering your main takeaways, the overall topic, and the author's conclusions. This tells the author how an outside reader understands their work: what they've covered well, and what may need more explanation.</p>
+    </section>
+
+    <section>
+      <h2>Filling in the rubric</h2>
+      <p>Read the work a second time with the rubric open. Elements are listed in the order they usually appear, but if the author's order makes sense and every element is present, their organization isn't an issue. Score each element:</p>
+      <dl class="details-list">
+        <dt>1: Below expectations</dt>
+        <dd>The element is missing, rarely present, or done poorly.</dd>
+        <dt>2: Meets expectations</dt>
+        <dd>The element is present most of the time and done well. Omissions don't affect the reader's understanding.</dd>
+        <dt>3: Exceeds expectations</dt>
+        <dd>The element is always present where relevant, and done very or exceptionally well.</dd>
+      </dl>
+      <p>Then read the work a third time. Double-check that elements you scored as missing are truly absent, remembering they may not appear in the expected order, and that no criterion was skipped.</p>
+    </section>
+
+    <section>
+      <h2>Providing feedback</h2>
+      <p>Write in paragraphs or lists, whichever you prefer, but be thorough. As a general rule, your feedback should be at least one page long in total.</p>
+
+      <h3>Strengths</h3>
+      <p>Always start with what the author did well, focusing on content rather than spelling and grammar. If you're not sure where to start, look at the elements you scored 3, or 2 if there are few 3s. Even if you recommend rejection, include at least a few strengths.</p>
+
+      <h3>Minor edits</h3>
+      <p>Quick fixes, such as formatting issues, spelling errors or grammar mistakes. If you scored formatting, grammar or structure elements as 1 or 2, include them here. If the content is there but its presentation needs adjusting, it's a minor edit.</p>
+
+      <h3>Major edits</h3>
+      <p>Large rewrites, or a call for more research, data or sources. For example, a strong method with a poor conclusion may need the conclusion overhauled; interesting data with conclusions drawn from a small sample may need further research. A review paper with only five sources over ten pages needs more sources, even if the writing is strong.</p>
+
+      <h3>Other comments</h3>
+      <p>Anything else, positive or negative, that isn't clearly a major or minor edit. Keep your most important notes in the sections above. It's fine if this is just "Well done!" or "Work has promise!"</p>
+    </section>
+
+    <section>
+      <h2>Making your recommendation</h2>
+      <p>After your feedback, choose your recommendation. An editor then reviews your form, checks they agree with your recommendation based on the rubric, and sends the decision to the author.</p>
+      <dl class="details-list">
+        <dt>Accept</dt>
+        <dd>Recommend rarely. Only if every rubric element is a 3, or nearly all are 3s with one to three 2s. Any 1 means the work shouldn't be accepted before revisions.</dd>
+        <dt>Needs revisions</dt>
+        <dd>Most submissions. The work isn't rated 3 overall, but the edits you recommend are reasonable to finish in the current timeframe. If they aren't, consider rejection.</dd>
+        <dt>Reject</dt>
+        <dd>Many necessary major edits, or edits that take a lot of time, such as further research or experiments. Authors are encouraged to resubmit next semester.</dd>
+      </dl>
+    </section>
+
+    <section class="submit-prompt">
+      <h2>Submitting your review on the site</h2>
+      <ol class="steps">
+        <li>Open the study from <a href="{{ url_for('my_assignments') }}">My assignments</a>, and download its files.</li>
+        <li>Download the blank rubric for its type from the review form, and fill it in.</li>
+        <li>Write your comments for the author, and any confidential comments for the editor.</li>
+        <li>Choose your recommendation, upload your completed rubric, and submit.</li>
+      </ol>
+      <p>The editor checks each rubric before the author can see it, so make sure your name doesn't appear anywhere in the file.</p>
+    </section>
+{% endblock %}

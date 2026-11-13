@@ -7,7 +7,7 @@
       {% if issue %}
         <p><a href="{{ url_for('build_issue') }}">Back to Build an issue</a></p>
         <h1>Edit draft: {{ issue.label }}</h1>
-        <p class="intro">Change the details, add or remove studies, then save your changes or publish the issue.</p>
+        <p class="intro">Change the details, add or remove studies, upload the issue PDF, then save your changes or publish the issue.</p>
       {% else %}
         <h1>Build an issue</h1>
         <p class="intro">Choose the accepted studies to include, fill in the issue details, then save it as a draft or publish it.</p>
@@ -20,7 +20,10 @@
         {% for draft in drafts %}
           <article>
             <h3>{{ draft.label }}</h3>
-            <p class="issue-meta">{{ draft.submissions | length }} stud{% if draft.submissions | length == 1 %}y{% else %}ies{% endif %}</p>
+            <p class="issue-meta">
+              {{ draft.submissions | length }} stud{% if draft.submissions | length == 1 %}y{% else %}ies{% endif %}
+              | {% if draft.compiled_pdf %}PDF uploaded{% else %}No PDF yet{% endif %}
+            </p>
             <div class="form-actions">
               <a href="{{ url_for('edit_issue', issue_id=draft.id) }}" class="button button--secondary button--small">Edit</a>
               <form method="post">
@@ -37,7 +40,7 @@
     {% if accepted %}
       <section class="form-page form-page--wide">
         <h2>{% if issue %}Issue details{% else %}New issue{% endif %}</h2>
-        <form method="post">
+        <form method="post" enctype="multipart/form-data">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
           <fieldset class="field">
@@ -80,6 +83,17 @@
             <label for="editor_note">Editor's note</label>
             <textarea id="editor_note" name="editor_note" rows="5" aria-describedby="editor-note-hint">{{ form.get('editor_note', '') }}</textarea>
             <p class="field-hint" id="editor-note-hint">Optional. A short introduction shown at the top of the issue.</p>
+          </div>
+
+          <div class="field">
+            <label for="compiled_pdf">Issue PDF</label>
+            <p class="field-hint" id="pdf-hint">
+              The whole issue as one PDF. Optional for drafts, required to publish.
+              {% if issue and issue.compiled_pdf %}
+                A PDF is already uploaded: <a href="{{ url_for('download_issue_pdf', issue_id=issue.id) }}" target="_blank" rel="noopener">view it<span class="visually-hidden"> (opens in a new tab)</span></a>. Uploading a new one replaces it.
+              {% endif %}
+            </p>
+            <input type="file" id="compiled_pdf" name="compiled_pdf" accept=".pdf,application/pdf" aria-describedby="pdf-hint">
           </div>
 
           <div class="form-actions">

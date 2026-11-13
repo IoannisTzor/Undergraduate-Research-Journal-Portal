@@ -14,8 +14,14 @@
       {% if issues %}
         {% for issue in issues %}
           <article>
-            <h3><a href="#">{{ issue.label }}</a></h3>
-            <p class="issue-meta">Published {{ issue.published_at | date }} | {{ issue.submissions | length }} studies</p>
+            <h3><a href="{{ url_for('issue_page', issue_id=issue.id) }}">{{ issue.label }}</a></h3>
+            <p class="issue-meta">
+              Published {{ issue.published_at | date }}
+              | {{ issue.submissions | length }} stud{% if issue.submissions | length == 1 %}y{% else %}ies{% endif %}
+              {% if issue.compiled_pdf %}
+                | <a href="{{ url_for('download_issue_pdf', issue_id=issue.id) }}" target="_blank" rel="noopener">Full issue PDF<span class="visually-hidden"> for {{ issue.label }} (opens in a new tab)</span></a>
+              {% endif %}
+            </p>
             <p>{{ issue.submissions | map(attribute="discipline") | unique | join(", ") | replace("-", " ") | title }}</p>
           </article>
         {% endfor %}
@@ -29,14 +35,13 @@
 
     <section>
       <h2>How to cite a study</h2>
-      <p>If you use a study from the journal in your own work, cite it like this:</p>
-      <p class="citation">Doe, J., &amp; Smith, J. (2026). How soil microbes respond to drought. <em>STEM Student Journal</em>, 1(2).</p>
-      <p>The numbers at the end are the volume and the issue within that volume.</p>
+      <p>If you use a study from the journal in your own work, cite it like this. Each study's page also shows its own citation.</p>
+      <p class="citation">Doe, J. (2026). How soil microbes respond to drought. <em>STEM Student Journal</em>, Volume 1, Fall 2026.</p>
     </section>
 
     <section class="submit-prompt">
       <h2>Want your work in the next issue?</h2>
-      <p>Lab reports, independent studies, and class projects are all welcome.</p>
-      <a href="{{ url_for('signup') }}" class="button">Become a Submitter</a>
+      <p>Research papers, review papers, posters, and other kinds of STEM work are all welcome.</p>
+      <a href="{{ url_for('guidelines') }}" class="button">Read the submission guidelines</a>
     </section>
 {% endblock %}
