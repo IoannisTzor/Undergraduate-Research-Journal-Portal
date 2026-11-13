@@ -58,6 +58,15 @@ ASSIGNABLE_ROLES = [role for role in ROLES if role != "guest"]
 DECISIONS = ["accepted", "revisions-requested", "rejected"]
 WITHDRAWABLE = ["submitted", "under-review", "revisions-requested", "revised", "accepted"]
 
+DECISIONS = ["accepted", "revisions-requested", "rejected", "formatting"]
+
+FORMATTING_LETTER = (
+    "Thank you for submitting \"{title}\" to the journal. Before work can go to peer review, "
+    "it needs to meet the formatting requirements for its type, and this submission doesn't meet them yet. "
+    "Please check it against the submission guidelines, make the changes, and submit it again. "
+    "We look forward to reading it."
+)
+
 
 # ===== 4. Request setup: current user, access control, template helpers =====
 @app.before_request
@@ -338,7 +347,7 @@ def record_decision(submission):
     errors = []
     if decision not in DECISIONS:
         errors.append("Please choose a decision.")
-    if not note:
+    if decision != "formatting" and not note:
         errors.append("Please write a message to the author.")
 
     if errors:
@@ -346,8 +355,15 @@ def record_decision(submission):
             flash(error, "error")
         return
 
-    submission.status = decision
-    submission.decision_note = note
+    if decision == "formatting":
+        message = FORMATTING_LETTER.format(title=submission.title)
+        if note:
+            message += "\n\nNotes from the editor:\n" + note
+        submission.status = "rejected"
+        submission.decision_note = message
+    else:
+        submission.status = decision
+        submission.decision_note = note
     db.session.commit()
     flash("Your decision was sent to the author.", "success")
 
@@ -530,7 +546,7 @@ def instructions(audience):
         abort(403)
     return render_template(f"instructions_{audience}.html")
 
-    
+
 @app.route("/about")
 def about():
     return render_template("about.html")

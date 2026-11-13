@@ -190,12 +190,16 @@
               <input type="radio" id="dec-reject" name="decision" value="rejected">
               <label for="dec-reject">Reject</label>
             </div>
+            <div class="radio-option">
+              <input type="radio" id="dec-formatting" name="decision" value="formatting">
+              <label for="dec-formatting">Return for formatting issues</label>
+            </div>
           </fieldset>
 
           <div class="field">
             <label for="decision_note">Message to the author</label>
-            <textarea id="decision_note" name="decision_note" rows="5" required aria-describedby="decision-note-hint"></textarea>
-            <p class="field-hint" id="decision-note-hint">The author will see this together with the reviewers' comments.</p>
+            <textarea id="decision_note" name="decision_note" rows="5" aria-describedby="decision-note-hint"></textarea>
+            <p class="field-hint" id="decision-note-hint">Required, except when returning for formatting issues: then a standard letter is sent, and anything you write here is added below it.</p>
           </div>
 
           <button type="submit" name="action" value="decide" class="button">Send decision</button>

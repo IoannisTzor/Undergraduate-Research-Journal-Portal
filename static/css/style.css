@@ -262,6 +262,10 @@ button.button {
   line-height: 1.6;
 }
 
+.preserve-lines {
+  white-space: pre-line;
+}
+
 /* ===== 9. Article list ===== */
 article {
   background-color: white;

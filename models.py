@@ -127,3 +127,10 @@ class Advisor(db.Model):
     last_name = db.Column(db.String(100), nullable=False)
     email = db.Column(db.String(255), nullable=False)
     discipline = db.Column(db.String(50), nullable=False)
+
+class SubmissionWindow(db.Model):
+    __tablename__ = "submission_windows"
+
+    id = db.Column(db.Integer, primary_key=True)
+    opens_on = db.Column(db.Date, nullable=False)
+    closes_on = db.Column(db.Date, nullable=False)
