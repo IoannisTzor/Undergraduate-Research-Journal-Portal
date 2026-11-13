@@ -5,7 +5,7 @@
 {% block content %}
     <section>
       <h1>Manage users</h1>
-      <p class="intro">Add accounts, change roles, and remove accounts that are no longer needed.</p>
+      <p class="intro">Change roles, set reviewers' preferred disciplines, and remove accounts that are no longer needed.</p>
     </section>
 
     <section>
@@ -19,6 +19,7 @@
                 <th scope="col">Email</th>
                 <th scope="col">Joined</th>
                 <th scope="col">Role</th>
+                <th scope="col">Preferred discipline</th>
                 <th scope="col"><span class="visually-hidden">Actions</span></th>
               </tr>
             </thead>
@@ -28,26 +29,55 @@
                   <td>{{ user.first_name }} {{ user.last_name }}</td>
                   <td>{{ user.email }}</td>
                   <td>{{ user.created_at | date }}</td>
-                  <td>
-                    <form method="post" class="row-form">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <input type="hidden" name="user_id" value="{{ user.id }}">
-                      <label for="role-{{ user.id }}" class="visually-hidden">Role for {{ user.name }}</label>
-                      <select id="role-{{ user.id }}" name="role">
-                        {% for role in roles if role != "guest" %}
-                          <option value="{{ role }}" {% if role == user.role %}selected{% endif %}>{{ role | capitalize }}</option>
-                        {% endfor %}
-                      </select>
-                      <button type="submit" name="action" value="change-role" class="button button--secondary button--small">Save</button>
-                    </form>
-                  </td>
-                  <td>
-                    <form method="post" onsubmit="return confirm('Delete the account for {{ user.name }}? This cannot be undone.');">
-                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                      <input type="hidden" name="user_id" value="{{ user.id }}">
-                      <button type="submit" name="action" value="delete" class="button button--secondary button--small">Delete<span class="visually-hidden"> {{ user.name }}</span></button>
-                    </form>
-                  </td>
+
+                  {% if user.id == current_user.id %}
+                    <td>{{ user.role | capitalize }} (you)</td>
+                  {% else %}
+                    <td>
+                      <form method="post" class="row-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <label for="role-{{ user.id }}" class="visually-hidden">Role for {{ user.first_name }} {{ user.last_name }}</label>
+                        <select id="role-{{ user.id }}" name="role">
+                          {% for role in roles if role != "guest" %}
+                            <option value="{{ role }}" {% if role == user.role %}selected{% endif %}>{{ role | capitalize }}</option>
+                          {% endfor %}
+                        </select>
+                        <button type="submit" name="action" value="change-role" class="button button--secondary button--small">Save<span class="visually-hidden"> role</span></button>
+                      </form>
+                    </td>
+                  {% endif %}
+
+                  {% if user.role == "reviewer" %}
+                    <td>
+                      <form method="post" class="row-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <label for="discipline-{{ user.id }}" class="visually-hidden">Preferred discipline for {{ user.first_name }} {{ user.last_name }}</label>
+                        <select id="discipline-{{ user.id }}" name="discipline">
+                          <option value="">No preference</option>
+                          {% for key, label in disciplines.items() %}
+                            <option value="{{ key }}" {% if key == user.preferred_discipline %}selected{% endif %}>{{ label }}</option>
+                          {% endfor %}
+                        </select>
+                        <button type="submit" name="action" value="set-discipline" class="button button--secondary button--small">Save<span class="visually-hidden"> discipline</span></button>
+                      </form>
+                    </td>
+                  {% else %}
+                    <td></td>
+                  {% endif %}
+
+                  {% if user.id == current_user.id %}
+                    <td></td>
+                  {% else %}
+                    <td>
+                      <form method="post" onsubmit="return confirm('Delete the account for {{ user.first_name }} {{ user.last_name }}? This cannot be undone.');">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <button type="submit" name="action" value="delete" class="button button--secondary button--small">Delete<span class="visually-hidden"> {{ user.first_name }} {{ user.last_name }}</span></button>
+                      </form>
+                    </td>
+                  {% endif %}
                 </tr>
               {% endfor %}
             </tbody>
@@ -56,32 +86,5 @@
       {% else %}
         <p class="empty-state">There are no accounts yet.</p>
       {% endif %}
-    </section>
-
-    <section class="form-page form-page--wide">
-      <h2>Add an account</h2>
-      <form method="post">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <div class="field">
-          <label for="new_name">Full name</label>
-          <input type="text" id="new_name" name="name" required>
-        </div>
-
-        <div class="field">
-          <label for="new_email">Email</label>
-          <input type="email" id="new_email" name="email" required>
-        </div>
-
-        <div class="field">
-          <label for="new_role">Role</label>
-          <select id="new_role" name="role" required>
-            {% for role in roles if role != "guest" %}
-              <option value="{{ role }}">{{ role | capitalize }}</option>
-            {% endfor %}
-          </select>
-        </div>
-
-        <button type="submit" name="action" value="add" class="button">Add account</button>
-      </form>
     </section>
 {% endblock %}

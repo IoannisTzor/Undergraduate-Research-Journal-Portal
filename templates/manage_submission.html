@@ -79,9 +79,23 @@
               <label for="reviewer">Reviewer</label>
               <select id="reviewer" name="reviewer_id" required>
                 <option value="">Choose a reviewer</option>
-                {% for user in reviewer_options %}
-                  <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
-                {% endfor %}
+                {% if matching_reviewers %}
+                  <optgroup label="Prefer {{ disciplines[submission.discipline] }}">
+                    {% for user in matching_reviewers %}
+                      <option value="{{ user.id }}">{{ user.first_name }} {{ user.last_name }}</option>
+                    {% endfor %}
+                  </optgroup>
+                {% endif %}
+                {% if other_reviewers %}
+                  <optgroup label="Other reviewers">
+                    {% for user in other_reviewers %}
+                      <option value="{{ user.id }}">
+                        {{ user.first_name }} {{ user.last_name }}
+                        ({% if user.preferred_discipline %}{{ disciplines[user.preferred_discipline] }}{% else %}no preference{% endif %})
+                      </option>
+                    {% endfor %}
+                  </optgroup>
+                {% endif %}
               </select>
             </div>
             <div class="field">
@@ -134,6 +148,26 @@
         {% endfor %}
       {% else %}
         <p class="empty-state">No reviews have been submitted yet.</p>
+      {% endif %}
+    </section>
+
+        <section>
+      <h2>Advisors for the final check</h2>
+      {% if advisors %}
+        <p class="field-hint">These advisors cover {{ disciplines[submission.discipline] }}. The email link opens your email app with the study's title in the subject.</p>
+        <ul class="reviewer-list">
+          {% for advisor in advisors %}
+            <li>
+              <span>{{ advisor.first_name }} {{ advisor.last_name }}</span>
+              <a href="mailto:{{ advisor.email }}?subject={{ ('Final check: ' ~ submission.title) | urlencode }}">{{ advisor.email }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty-state">
+          There are no advisors for {{ disciplines[submission.discipline] }} yet.
+          <a href="{{ url_for('manage_advisors') }}">Add one on the Advisors page</a>.
+        </p>
       {% endif %}
     </section>
 

@@ -1,14 +1,14 @@
 import os
 from functools import wraps
 
-from flask import Flask, render_template, session, redirect, url_for, request, abort, g, flash
+from flask import Flask, render_template, session, redirect, url_for, request, abort, g, flash, send_from_directory
 from dotenv import load_dotenv
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import text
 from seed import seed_command
 from datetime import date, datetime, timezone
-from models import db, User, Submission, SubmissionVersion, SubmissionFile, Review, Issue
+from models import db, User, Submission, SubmissionVersion, SubmissionFile, Review, Issue, Advisor
 from submission_types import SUBMISSION_TYPES, DISCIPLINES, RECOMMENDATIONS
 from uploads import file_extension, is_valid_file, save_upload
 
@@ -85,6 +85,44 @@ def set_discipline(user):
         flash(f"{user.first_name} {user.last_name} now prefers {DISCIPLINES[discipline]}.", "success")
     else:
         flash(f"{user.first_name} {user.last_name} no longer has a preferred discipline.", "success")
+
+def render_advisors(form):
+    advisors = db.session.scalars(
+        db.select(Advisor).order_by(Advisor.discipline, Advisor.last_name)
+    ).all()
+    return render_template("advisors.html", advisors=advisors, form=form)
+
+
+def add_advisor():
+    first_name = request.form.get("first_name", "").strip()
+    last_name = request.form.get("last_name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    discipline = request.form.get("discipline", "")
+
+    errors = []
+    if not first_name or not last_name:
+        errors.append("Please enter the advisor's first and last name.")
+    if "@" not in email or "." not in email.split("@")[-1]:
+        errors.append("Please enter a valid email address.")
+    if discipline not in DISCIPLINES:
+        errors.append("Please choose a discipline.")
+
+    if not errors:
+        existing = db.session.scalars(
+            db.select(Advisor).where(Advisor.email == email, Advisor.discipline == discipline)
+        ).first()
+        if existing:
+            errors.append(f"{existing.first_name} {existing.last_name} is already an advisor for {DISCIPLINES[discipline]}.")
+
+    if errors:
+        for error in errors:
+            flash(error, "error")
+        return render_advisors(request.form)
+
+    db.session.add(Advisor(first_name=first_name, last_name=last_name, email=email, discipline=discipline))
+    db.session.commit()
+    flash(f"{first_name} {last_name} was added as an advisor for {DISCIPLINES[discipline]}.", "success")
+    return redirect(url_for("manage_advisors"))
 
 
 def role_required(role):
@@ -605,12 +643,24 @@ def manage_submission(submission_id):
         .order_by(User.last_name)
     ).all()
 
+    advisors = db.session.scalars(
+        db.select(Advisor)
+        .where(Advisor.discipline == submission.discipline)
+        .order_by(Advisor.last_name)
+    ).all()
+
+    matching_reviewers = [user for user in reviewer_options if user.preferred_discipline == submission.discipline]
+    other_reviewers = [user for user in reviewer_options if user.preferred_discipline != submission.discipline]
+
     submitted_reviews = [review for review in submission.reviews if review.status == "submitted"]
     return render_template(
         "manage_submission.html",
         submission=submission,
         reviewer_options=reviewer_options,
+        matching_reviewers=matching_reviewers,
+        other_reviewers=other_reviewers,
         submitted_reviews=submitted_reviews,
+        advisors=advisors,
     )
 
 @app.errorhandler(404)
@@ -703,6 +753,25 @@ def manage_users():
         db.select(User).order_by(User.role, User.last_name)
     ).all()
     return render_template("manage_users.html", users=users)
+
+@app.route("/editor/advisors", methods=["GET", "POST"])
+@role_required("editor")
+def manage_advisors():
+    if request.method == "POST":
+        action = request.form.get("action")
+        if action == "add":
+            return add_advisor()
+        if action == "delete":
+            advisor = db.session.get(Advisor, request.form.get("advisor_id", type=int) or 0)
+            if advisor is None:
+                abort(404)
+            name = f"{advisor.first_name} {advisor.last_name}"
+            db.session.delete(advisor)
+            db.session.commit()
+            flash(f"{name} was removed from the advisors list.", "success")
+            return redirect(url_for("manage_advisors"))
+        abort(400)
+    return render_advisors(form={})
 
 @app.route("/guidelines")
 def guidelines():

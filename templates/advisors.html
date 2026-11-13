@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Advisors | STEM Student Journal{% endblock %}
+
+{% block content %}
+    <section>
+      <h1>Advisors</h1>
+      <p class="intro">Faculty advisors who do the final check on studies in their discipline. Each submission's page lists the advisors for its discipline, with an email link.</p>
+    </section>
+
+    <section>
+      <h2>All advisors</h2>
+      {% if advisors %}
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">Discipline</th>
+                <th scope="col">Name</th>
+                <th scope="col">Email</th>
+                <th scope="col"><span class="visually-hidden">Actions</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for advisor in advisors %}
+                <tr>
+                  <td>{{ disciplines[advisor.discipline] }}</td>
+                  <td>{{ advisor.first_name }} {{ advisor.last_name }}</td>
+                  <td><a href="mailto:{{ advisor.email }}">{{ advisor.email }}</a></td>
+                  <td>
+                    <form method="post" onsubmit="return confirm('Remove {{ advisor.first_name }} {{ advisor.last_name }} as an advisor for {{ disciplines[advisor.discipline] }}?');">
+                      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                      <input type="hidden" name="advisor_id" value="{{ advisor.id }}">
+                      <button type="submit" name="action" value="delete" class="button button--secondary button--small">Delete<span class="visually-hidden"> {{ advisor.first_name }} {{ advisor.last_name }}, {{ disciplines[advisor.discipline] }}</span></button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <p class="empty-state">There are no advisors yet. Add the first one below.</p>
+      {% endif %}
+    </section>
+
+    <section class="form-page form-page--wide">
+      <h2>Add an advisor</h2>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <div class="field">
+          <label for="first_name">First name</label>
+          <input type="text" id="first_name" name="first_name" value="{{ form.get('first_name', '') }}" required>
+        </div>
+
+        <div class="field">
+          <label for="last_name">Last name</label>
+          <input type="text" id="last_name" name="last_name" value="{{ form.get('last_name', '') }}" required>
+        </div>
+
+        <div class="field">
+          <label for="email">Email</label>
+          <input type="email" id="email" name="email" value="{{ form.get('email', '') }}" required>
+        </div>
+
+        <div class="field">
+          <label for="discipline">Discipline</label>
+          <select id="discipline" name="discipline" required>
+            <option value="">Choose a discipline</option>
+            {% for key, label in disciplines.items() %}
+              <option value="{{ key }}" {% if form.get('discipline') == key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <button type="submit" name="action" value="add" class="button">Add advisor</button>
+      </form>
+    </section>
+{% endblock %}
