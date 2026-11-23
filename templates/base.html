@@ -52,10 +52,15 @@
             <li><a href="{{ url_for('manage_users') }}">Manage users</a></li>
           {% endif %}
 
-          {% if current_role == "guest" %}
+                    {% if current_role == "guest" %}
             <li><a href="{{ url_for('login') }}">Log in</a></li>
           {% else %}
-            <li><a href="{{ url_for('dev_logout') }}">Log out</a></li>
+            <li>
+              <form method="post" action="{{ url_for('logout') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="link-button">Log out</button>
+              </form>
+            </li>
           {% endif %}
         </ul>
       </nav>

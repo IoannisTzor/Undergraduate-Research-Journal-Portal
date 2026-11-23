@@ -27,6 +27,7 @@ from dotenv import load_dotenv
 from flask import Flask, render_template, session, redirect, url_for, request, abort, g, flash, send_from_directory
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect
+from werkzeug.security import check_password_hash, generate_password_hash
 
 from models import db, User, Submission, SubmissionVersion, SubmissionFile, Review, Issue, Advisor, SubmissionWindow
 from seed import seed_command
@@ -42,6 +43,7 @@ app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
 app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "uploads")
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
@@ -67,6 +69,16 @@ FORMATTING_LETTER = (
     "We look forward to reading it."
 )
 
+ALLOWED_EMAIL_DOMAIN = "cmich.edu"
+MIN_PASSWORD_LENGTH = 10
+
+ROLE_HOMES = {
+    "submitter": "my_submissions",
+    "reviewer": "my_assignments",
+    "editor": "all_submissions",
+    "admin": "manage_users",
+}
+
 
 # ===== 4. Request setup: current user, access control, template helpers =====
 @app.before_request
@@ -79,7 +91,10 @@ def role_required(role):
     def decorator(view):
         @wraps(view)
         def wrapped(*args, **kwargs):
-            if g.user is None or g.user.role != role:
+            if g.user is None:
+                flash("Please log in to see that page.", "error")
+                return redirect(url_for("login", next=request.path))
+            if g.user.role != role:
                 abort(403)
             return view(*args, **kwargs)
         return wrapped
@@ -111,6 +126,20 @@ def parse_date(text):
         return date.fromisoformat(text)
     except ValueError:
         return None
+
+def log_in(user):
+    session.clear()
+    session["user_id"] = user.id
+
+
+def home_for(user):
+    return url_for(ROLE_HOMES.get(user.role, "home"))
+
+
+def safe_next(target):
+    if target and target.startswith("/") and not target.startswith("//") and "\\" not in target:
+        return target
+    return None
 
 
 # ===== 5. Helpers: users and advisors =====
@@ -637,15 +666,79 @@ def study_page(submission_id):
         abort(404)
     return render_template("study.html", study=study)
 
-
-@app.route("/login")
+@app.route("/login", methods=["GET", "POST"])
 def login():
-    return render_template("login.html")
+    if g.user:
+        return redirect(home_for(g.user))
+    next_url = safe_next(request.args.get("next") or request.form.get("next"))
+    if request.method == "GET":
+        return render_template("login.html", form={}, next_url=next_url)
+
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+    user = db.session.scalars(db.select(User).where(User.email == email)).first()
+
+    if user is None or not check_password_hash(user.password_hash, password):
+        flash("That email and password don't match an account.", "error")
+        return render_template("login.html", form={"email": email}, next_url=next_url)
+
+    log_in(user)
+    flash(f"Welcome back, {user.first_name}.", "success")
+    return redirect(next_url or home_for(user))
 
 
-@app.route("/signup")
+@app.route("/logout", methods=["POST"])
+def logout():
+    session.clear()
+    flash("You've been logged out.", "success")
+    return redirect(url_for("home"))
+
+@app.route("/signup", methods=["GET", "POST"])
 def signup():
-    return render_template("signup.html")
+    if g.user:
+        return redirect(home_for(g.user))
+    if request.method == "GET":
+        return render_template("signup.html", form={})
+
+    first_name = request.form.get("first_name", "").strip()
+    last_name = request.form.get("last_name", "").strip()
+    email = request.form.get("email", "").strip().lower()
+    password = request.form.get("password", "")
+    confirm_password = request.form.get("confirm_password", "")
+
+    errors = []
+    if not first_name or not last_name:
+        errors.append("Please enter your first and last name.")
+    if email.count("@") != 1 or email.split("@")[1] != ALLOWED_EMAIL_DOMAIN:
+        errors.append(f"Please use your CMU email address, ending in @{ALLOWED_EMAIL_DOMAIN}.")
+    if len(password) < MIN_PASSWORD_LENGTH:
+        errors.append(f"Your password must be at least {MIN_PASSWORD_LENGTH} characters long.")
+    elif password != confirm_password:
+        errors.append("The two passwords don't match.")
+
+    if not errors:
+        existing = db.session.scalars(db.select(User).where(User.email == email)).first()
+        if existing:
+            errors.append("An account with that email already exists. Try logging in instead.")
+
+    if errors:
+        for error in errors:
+            flash(error, "error")
+        return render_template("signup.html", form=request.form)
+
+    user = User(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        password_hash=generate_password_hash(password),
+        role="submitter",
+    )
+    db.session.add(user)
+    db.session.commit()
+
+    log_in(user)
+    flash(f"Welcome, {first_name}! Your account is ready.", "success")
+    return redirect(url_for("guidelines"))
 
 
 # ===== 9. Routes: submitters =====
