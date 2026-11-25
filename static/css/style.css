@@ -6,7 +6,7 @@
     3. Base styles            9. Article list       15. Submission and review pages
     4. Layout                10. Past issues        16. Manage submission
     5. Header                11. Forms              17. Build an issue
-    6. Footer                12. Tables             18. Developer role switcher
+    6. Footer                12. Tables             
    ========================================================================== */
 
 
@@ -641,21 +641,3 @@ th {
   margin-top: 32px;
 }
 
-/* ===== 18. Developer role switcher (temporary, remove with real login) ===== */
-.dev-bar {
-  background-color: var(--text);
-  color: white;
-  font-size: 0.85rem;
-}
-
-.dev-bar .container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-
-.dev-bar a {
-  color: var(--light-blue);
-}

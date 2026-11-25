@@ -11,22 +11,6 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  <div class="dev-bar">
-    <div class="container">
-      Viewing as:
-      <strong>
-        {% if current_user %}
-          {{ current_user.first_name }} {{ current_user.last_name }} ({{ current_role }})
-        {% else %}
-          guest
-        {% endif %}
-      </strong>
-      {% for user in dev_users %}
-        <a href="{{ url_for('dev_login', user_id=user.id) }}">{{ user.first_name }} ({{ user.role }})</a>
-      {% endfor %}
-      <a href="{{ url_for('dev_logout') }}">guest</a>
-    </div>
-  </div>
   <header class="site-header">
     <div class="container header-inner">
       <a href="{{ url_for('home') }}" class="site-name">STEM Student Journal</a>
@@ -41,8 +25,10 @@
             <li><a href="{{ url_for('guidelines') }}">Submit a study</a></li>
           {% elif current_role == "reviewer" %}
             <li><a href="{{ url_for('my_assignments') }}">My assignments</a></li>
+            <li><a href="{{ url_for('my_submissions') }}">My submissions</a></li>
             <li><a href="{{ url_for('instructions', audience='reviewers') }}">Instructions</a></li>
           {% elif current_role == "editor" %}
+            <li><a href="{{ url_for('my_submissions') }}">My submissions</a></li>
             <li><a href="{{ url_for('all_submissions') }}">All submissions</a></li>
             <li><a href="{{ url_for('build_issue') }}">Build an issue</a></li>
             <li><a href="{{ url_for('manage_advisors') }}">Advisors</a></li>
@@ -52,7 +38,7 @@
             <li><a href="{{ url_for('manage_users') }}">Manage users</a></li>
           {% endif %}
 
-                    {% if current_role == "guest" %}
+          {% if current_role == "guest" %}
             <li><a href="{{ url_for('login') }}">Log in</a></li>
           {% else %}
             <li>

@@ -35,8 +35,8 @@ SUBMISSION_TYPES = {
     "poster": {
         "label": "Poster",
         "description": "A poster is a visual summary of a research project.",
-        "format_note": "48 x 36 inches or 36 x 48 inches | PNG",
-        "file_formats": ["png"],
+        "format_note": "48 x 36 inches or 36 x 48 inches | PDF",
+        "file_formats": ["pdf"],
         "multiple_files": False,
         "required_elements": [
             "research question", "background", "method", "results", "conclusion", "acknowledgements", "references",
@@ -51,8 +51,8 @@ SUBMISSION_TYPES = {
     "other": {
         "label": "Non-traditional",
         "description": "If your submission does not fall into the categories above, but you still feel it would be a good fit for the journal, you are welcome to submit. This may include creative projects, interviews, visualizations of findings, or other alternative ways of sharing STEM work.",
-        "format_note": "APA 7th Edition, when applicable (such as references) | PDF or PNG(s)",
-        "file_formats": ["pdf", "png"],
+        "format_note": "APA 7th Edition, when applicable (such as references) | PDF(s)",
+        "file_formats": ["pdf"],
         "multiple_files": True,
         "required_elements": ["summary or abstract", "acknowledgements", "references"],
         "max_pages": 15,

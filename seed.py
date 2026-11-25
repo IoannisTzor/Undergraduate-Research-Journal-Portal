@@ -1,9 +1,9 @@
-from datetime import date
+import os
+from datetime import date, datetime, timedelta, timezone
 
 import click
 from flask.cli import with_appcontext
 from werkzeug.security import generate_password_hash
-from datetime import date, datetime, timedelta, timezone
 
 from models import db, User, Issue, Submission, SubmissionVersion, SubmissionFile, Review, Advisor, SubmissionWindow
 
@@ -11,6 +11,13 @@ from models import db, User, Issue, Submission, SubmissionVersion, SubmissionFil
 @click.command("seed")
 @with_appcontext
 def seed_command():
+       
+    if os.environ.get("ALLOW_SEED", "false").lower() != "true":
+        click.echo("Seeding is turned off here. It deletes all data, so it only runs where ALLOW_SEED=true.")
+        return
+    if not click.confirm("This deletes ALL data in the database and replaces it with test data. Continue?"):
+        click.echo("Cancelled. Nothing was changed.")
+        return
     """Delete all data and fill the database with test data."""
 
     # Delete existing rows, children before parents

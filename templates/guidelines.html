@@ -29,7 +29,7 @@
           <h3>{{ type_info.label }}</h3>
           <p>{{ type_info.description }}</p>
           {% include "_type_requirements.html" %}
-          {% if current_role == "submitter" and submission_window %}
+          {% if can_submit and submission_window %}
             <a href="{{ url_for('submit_study', submission_type=type_key) }}" class="button">{{ type_info.submit_label }}</a>
           {% endif %}
         </article>
@@ -57,7 +57,7 @@
         <li>you have done work in STEM</li>
         <li>your submission follows APA 7th Edition formatting</li>
         <li>your submission is within the maximum length or size</li>
-        <li>your submission is the correct file type (PDF or PNG)</li>
+        <li>your submission is the correct file type PDF</li>
       </ul>
     </section>
 {% endblock %}

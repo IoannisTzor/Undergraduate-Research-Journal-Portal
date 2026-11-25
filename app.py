@@ -20,6 +20,7 @@
 
 # ===== 1. Imports =====
 import os
+import click
 from datetime import date, datetime, timezone
 from functools import wraps
 
@@ -33,17 +34,22 @@ from models import db, User, Submission, SubmissionVersion, SubmissionFile, Revi
 from seed import seed_command
 from submission_types import SUBMISSION_TYPES, DISCIPLINES, RECOMMENDATIONS
 from uploads import file_extension, is_valid_file, save_upload
+from werkzeug.middleware.proxy_fix import ProxyFix
+
 
 
 # ===== 2. App setup =====
 load_dotenv()
 
 app = Flask(__name__)
+if os.environ.get("TRUST_PROXY", "false").lower() == "true":
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.config["SECRET_KEY"] = os.environ["SECRET_KEY"]
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ["DATABASE_URL"]
-app.config["UPLOAD_FOLDER"] = os.path.join(app.root_path, "uploads")
+app.config["UPLOAD_FOLDER"] = os.environ.get("UPLOAD_FOLDER", os.path.join(app.root_path, "uploads"))
 app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_SECURE"] = os.environ.get("SESSION_COOKIE_SECURE", "false").lower() == "true"
 
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
@@ -79,6 +85,8 @@ ROLE_HOMES = {
     "admin": "manage_users",
 }
 
+SUBMITTING_ROLES = ["submitter", "reviewer", "editor"]
+
 
 # ===== 4. Request setup: current user, access control, template helpers =====
 @app.before_request
@@ -87,14 +95,14 @@ def load_current_user():
     g.user = db.session.get(User, user_id) if user_id else None
 
 
-def role_required(role):
+def role_required(*roles):
     def decorator(view):
         @wraps(view)
         def wrapped(*args, **kwargs):
             if g.user is None:
                 flash("Please log in to see that page.", "error")
                 return redirect(url_for("login", next=request.path))
-            if g.user.role != role:
+            if g.user.role not in roles:
                 abort(403)
             return view(*args, **kwargs)
         return wrapped
@@ -107,10 +115,10 @@ def inject_role():
         "current_user": g.user,
         "current_role": g.user.role if g.user else "guest",
         "roles": ROLES,
-        "dev_users": db.session.scalars(db.select(User).order_by(User.role, User.last_name)).all(),
         "submission_types": SUBMISSION_TYPES,
         "disciplines": DISCIPLINES,
         "recommendations": RECOMMENDATIONS,
+        "can_submit": g.user is not None and g.user.role in SUBMITTING_ROLES,
     }
 
 
@@ -293,7 +301,7 @@ def can_view_version(user, version):
         return False
     if user.role == "editor":
         return True
-    if user.role == "submitter" and submission.author_id == user.id:
+    if submission.author_id == user.id:
         return True
     if user.role == "reviewer" and any(review.reviewer_id == user.id for review in submission.reviews):
         return True
@@ -381,6 +389,8 @@ def assign_reviewer(submission):
     errors = []
     if reviewer is None or reviewer.role != "reviewer":
         errors.append("Please choose a reviewer.")
+    elif reviewer.id == submission.author_id:
+        errors.append("Reviewers can't review their own submissions.")
     elif any(review.reviewer_id == reviewer.id for review in submission.current_reviews):
         errors.append(f"{reviewer.first_name} {reviewer.last_name} is already reviewing this version.")
     if due_date is None:
@@ -743,7 +753,7 @@ def signup():
 
 # ===== 9. Routes: submitters =====
 @app.route("/submit/<submission_type>", methods=["GET", "POST"])
-@role_required("submitter")
+@role_required(*SUBMITTING_ROLES)
 def submit_study(submission_type):
     type_info = SUBMISSION_TYPES.get(submission_type)
     if type_info is None:
@@ -818,7 +828,7 @@ def submit_study(submission_type):
 
 
 @app.route("/my-submissions")
-@role_required("submitter")
+@role_required(*SUBMITTING_ROLES)
 def my_submissions():
     submissions = db.session.scalars(
         db.select(Submission)
@@ -829,7 +839,7 @@ def my_submissions():
 
 
 @app.route("/my-submissions/<int:submission_id>", methods=["GET", "POST"])
-@role_required("submitter")
+@role_required(*SUBMITTING_ROLES)
 def submission_details(submission_id):
     submission = db.session.get(Submission, submission_id)
     if submission is None or submission.author_id != g.user.id:
@@ -939,6 +949,9 @@ def manage_submission(submission_id):
     submission = db.session.get(Submission, submission_id)
     if submission is None:
         abort(404)
+    if submission.author_id == g.user.id:
+        flash("This is your own submission, so another editor needs to handle it.", "error")
+        return redirect(url_for("all_submissions"))
 
     if request.method == "POST":
         action = request.form.get("action")
@@ -957,7 +970,11 @@ def manage_submission(submission_id):
     assigned_ids = [review.reviewer_id for review in submission.current_reviews]
     reviewer_options = db.session.scalars(
         db.select(User)
-        .where(User.role == "reviewer", User.id.not_in(assigned_ids))
+        .where(
+            User.role == "reviewer",
+            User.id.not_in(assigned_ids),
+            User.id != submission.author_id,
+        )
         .order_by(User.last_name)
     ).all()
 
@@ -1098,7 +1115,7 @@ def download_rubric(review_id):
         abort(404)
     user = g.user
     allowed = user is not None and (
-        user.role == "editor"
+        (user.role == "editor" and review.submission.author_id != user.id)
         or review.reviewer_id == user.id
         or (review.rubric_approved and review.submission.author_id == user.id)
     )
@@ -1126,20 +1143,39 @@ def download_issue_pdf(issue_id):
 
 
 # ===== 14. Routes: development only (remove with real login) =====
-@app.route("/dev/login/<int:user_id>")
-def dev_login(user_id):
-    user = db.session.get(User, user_id)
-    if user is None:
-        abort(404)
-    session["user_id"] = user.id
-    flash(f"Now viewing as {user.first_name} {user.last_name}.", "success")
-    return redirect(request.referrer or url_for("home"))
 
 
-@app.route("/dev/logout")
-def dev_logout():
-    session.pop("user_id", None)
-    return redirect(url_for("home"))
+
+# ===== Terminal commands =====
+@app.cli.command("create-admin")
+@click.argument("email")
+def create_admin(email):
+    """Create an admin account, or make an existing account an admin."""
+    email = email.strip().lower()
+    user = db.session.scalars(db.select(User).where(User.email == email)).first()
+
+    if user:
+        user.role = "admin"
+        db.session.commit()
+        click.echo(f"{user.first_name} {user.last_name} is now an admin.")
+        return
+
+    first_name = click.prompt("First name").strip()
+    last_name = click.prompt("Last name").strip()
+    password = click.prompt("Password", hide_input=True, confirmation_prompt=True)
+    if len(password) < MIN_PASSWORD_LENGTH:
+        click.echo(f"The password must be at least {MIN_PASSWORD_LENGTH} characters. No account was created.")
+        return
+
+    db.session.add(User(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        password_hash=generate_password_hash(password),
+        role="admin",
+    ))
+    db.session.commit()
+    click.echo(f"Admin account created for {email}.")
 
 
 # ===== 15. Error pages =====

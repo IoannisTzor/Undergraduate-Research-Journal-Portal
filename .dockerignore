@@ -1,0 +1,18 @@
+# Never put these in the image
+venv/
+.venv/
+.env
+.env.*
+!.env.example
+uploads/
+__pycache__/
+*.py[cod]
+.git/
+.gitignore
+.vscode/
+.idea/
+*.log
+.pytest_cache/
+Thumbs.db
+.DS_Store
+docker-compose.yml

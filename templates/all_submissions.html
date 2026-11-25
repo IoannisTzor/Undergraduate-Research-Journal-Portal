@@ -25,7 +25,13 @@
               <tbody>
               {% for submission in submissions %}
                 <tr>
-                  <td><a href="{{ url_for('manage_submission', submission_id=submission.id) }}">{{ submission.title }}</a></td>
+                  <td>
+                    {% if submission.author_id == current_user.id %}
+                      {{ submission.title }} <span class="issue-meta">(your submission)</span>
+                    {% else %}
+                      <a href="{{ url_for('manage_submission', submission_id=submission.id) }}">{{ submission.title }}</a>
+                    {% endif %}
+                  </td>
                   <td>{{ submission_types[submission.submission_type].label }}</td>
                   <td>{{ submission.author.first_name }} {{ submission.author.last_name }}</td>
                   <td>{{ submission.submitted_at | date }}</td>
